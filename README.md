@@ -22,6 +22,21 @@ cd cli && swift build
 ```
 
 Optional: pass `--runtime /path/to/BeaconRuntime` to use a specific binary.
+Optional: pass `--icon /path/to/AppIcon.icns` to embed a custom app icon.
+
+### Dev Mode (Hot Reload)
+
+Use your frontend dev server directly instead of a built folder:
+
+```bash
+cd sample
+npm run dev
+```
+
+```bash
+cd cli && swift build
+./.build/debug/beacon dev ../sample --url http://localhost:5173
+```
 
 ## JavaScript API
 

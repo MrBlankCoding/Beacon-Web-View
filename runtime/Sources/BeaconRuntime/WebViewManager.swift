@@ -72,6 +72,13 @@ class WebViewManager: NSObject, WKNavigationDelegate {
     }
 
     private func loadEntryFile() {
+        if let devURL = ProcessInfo.processInfo.environment["BEACON_DEV_SERVER_URL"],
+           let url = URL(string: devURL),
+           url.scheme != nil {
+            webView.load(URLRequest(url: url))
+            return
+        }
+
         let fm = FileManager.default
         if let bundledWebURL = Bundle.main.url(forResource: "web", withExtension: nil) {
             let bundledEntryURL = bundledWebURL.appendingPathComponent(config.entry)
@@ -131,8 +138,18 @@ class WebViewManager: NSObject, WKNavigationDelegate {
     }
 
     static func resolveBridgeScript(in bundle: Bundle) throws -> String {
+        let executableDirectory = URL(fileURLWithPath: CommandLine.arguments[0]).deletingLastPathComponent()
+        let fallbackCandidates: [URL] = [
+            executableDirectory
+                .appendingPathComponent("BeaconRuntime_BeaconRuntime.bundle/Resources/bridge.js"),
+            executableDirectory
+                .appendingPathComponent("BeaconRuntime_BeaconRuntime.bundle/Contents/Resources/bridge.js"),
+            executableDirectory.appendingPathComponent("Resources/bridge.js")
+        ]
+
         let bridgeURL = bundle.url(forResource: "bridge", withExtension: "js")
             ?? bundle.url(forResource: "bridge", withExtension: "js", subdirectory: "Resources")
+            ?? fallbackCandidates.first(where: { FileManager.default.fileExists(atPath: $0.path) })
 
         guard let bridgeURL else {
             throw BridgeScriptError.missing

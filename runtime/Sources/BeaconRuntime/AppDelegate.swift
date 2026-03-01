@@ -5,7 +5,11 @@ class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCenterDele
     private var mainProcess: MainProcessCoordinator?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
-        UNUserNotificationCenter.current().delegate = self
+        if RuntimeEnvironment.isRunningFromAppBundle() {
+            UNUserNotificationCenter.current().delegate = self
+        } else {
+            print("Notifications delegate disabled: runtime is not launched from a .app bundle")
+        }
 
         do {
             let coordinator = try MainProcessCoordinator()

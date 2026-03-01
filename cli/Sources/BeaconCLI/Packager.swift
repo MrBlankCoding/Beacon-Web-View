@@ -8,6 +8,7 @@ class Packager {
     private let bundleId: String
     private let runtimeBinaryURL: URL
     private let config: ConfigValidator.ValidatedConfig
+    private let iconURL: URL?
     private let signIdentity: String
     private let skipSign: Bool
     private let incremental: Bool
@@ -19,6 +20,7 @@ class Packager {
         bundleId: String,
         runtimeBinaryURL: URL,
         config: ConfigValidator.ValidatedConfig,
+        iconURL: URL?,
         signIdentity: String,
         skipSign: Bool,
         incremental: Bool
@@ -29,6 +31,7 @@ class Packager {
         self.bundleId = bundleId
         self.runtimeBinaryURL = runtimeBinaryURL
         self.config = config
+        self.iconURL = iconURL
         self.signIdentity = signIdentity
         self.skipSign = skipSign
         self.incremental = incremental
@@ -84,6 +87,12 @@ class Packager {
         let configDestURL = resourcesURL.appendingPathComponent("runtime.config.json")
         try copyItemIfNeeded(from: configSrcURL, to: configDestURL)
         print("Config copied")
+
+        if let iconURL {
+            let iconDestURL = resourcesURL.appendingPathComponent("AppIcon.icns")
+            try copyItemIfNeeded(from: iconURL, to: iconDestURL)
+            print("App icon copied")
+        }
 
         let plistContent = PlistGenerator.generate(
             appName: appName,

@@ -22,6 +22,9 @@ struct BuildCommand: ParsableCommand {
     @Option(name: .long, help: "Path to prebuilt BeaconRuntime binary")
     var runtime: String?
 
+    @Option(name: .long, help: "Path to .icns icon file to embed in the app bundle")
+    var icon: String?
+
     @Flag(name: .long, help: "Skip automatic BeaconRuntime build when the binary is missing")
     var skipRuntimeBuild: Bool = false
 
@@ -39,6 +42,7 @@ struct BuildCommand: ParsableCommand {
         let projectURL = resolveUserPath(projectDir, relativeTo: cwd)
         let outputURL = resolveUserPath(output, relativeTo: cwd)
         let appName = name ?? projectURL.lastPathComponent
+        let iconURL = try resolveIconPath(icon, relativeTo: cwd)
         print("Beacon Packager")
         print("   Project: \(projectURL.path)")
         print("   App Name: \(appName)")
@@ -73,6 +77,7 @@ struct BuildCommand: ParsableCommand {
             bundleId: bundleId ?? "com.beacon.\(appName.lowercased().replacingOccurrences(of: " ", with: "-"))",
             runtimeBinaryURL: runtimeBinaryURL,
             config: config,
+            iconURL: iconURL,
             signIdentity: signIdentity,
             skipSign: skipSign,
             incremental: incremental
@@ -180,6 +185,19 @@ struct BuildCommand: ParsableCommand {
         }
         return base.appendingPathComponent(expanded).standardizedFileURL
     }
+
+    private func resolveIconPath(_ path: String?, relativeTo base: URL) throws -> URL? {
+        guard let path else { return nil }
+        let resolved = resolveUserPath(path, relativeTo: base)
+        let fm = FileManager.default
+        guard fm.fileExists(atPath: resolved.path) else {
+            throw PackagerError.iconFileNotFound(resolved.path)
+        }
+        guard resolved.pathExtension.lowercased() == "icns" else {
+            throw PackagerError.invalidIconFile(resolved.path)
+        }
+        return resolved
+    }
 }
 
 enum PackagerError: LocalizedError {
@@ -187,6 +205,8 @@ enum PackagerError: LocalizedError {
     case runtimeProjectNotFound
     case runtimeBuildFailed
     case appSigningFailed
+    case iconFileNotFound(String)
+    case invalidIconFile(String)
 
     var errorDescription: String? {
         switch self {
@@ -198,6 +218,10 @@ enum PackagerError: LocalizedError {
             return "Failed to build BeaconRuntime automatically. Build it manually with: cd runtime && swift build"
         case .appSigningFailed:
             return "Failed to codesign the generated app bundle. Retry, or build with --skip-sign."
+        case .iconFileNotFound(let path):
+            return "Icon file not found at: \(path)"
+        case .invalidIconFile(let path):
+            return "Icon file must be an .icns file: \(path)"
         }
     }
 }

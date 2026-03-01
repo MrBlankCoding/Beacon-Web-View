@@ -21,6 +21,11 @@ class NotificationAPI {
             return
         }
 
+        guard RuntimeEnvironment.isRunningFromAppBundle() else {
+            completion(.error("Notifications require launching BeaconRuntime from a packaged .app bundle."))
+            return
+        }
+
         let body = args["body"] as? String ?? ""
 
         DispatchQueue.main.async {

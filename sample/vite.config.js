@@ -7,7 +7,11 @@ export default defineConfig({
     {
       name: "beacon-file-runtime-html",
       enforce: "post",
-      transformIndexHtml(html) {
+      transformIndexHtml(html, ctx) {
+        // Keep dev-server HTML untouched so ESM scripts still run.
+        if (!ctx?.bundle) {
+          return html;
+        }
         return html
           .replace(/\s+crossorigin(?:="[^"]*")?/g, "")
           .replace(/\s+type="module"/g, "")

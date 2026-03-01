@@ -28,6 +28,13 @@ struct RuntimeConfig: Codable {
     // Load the config
     // This determines the NATIVE apis we will have to deal with
     static func load() throws -> RuntimeConfig {
+        let env = ProcessInfo.processInfo.environment
+        if let configuredPath = env["BEACON_RUNTIME_CONFIG"], !configuredPath.isEmpty {
+            let configURL = URL(fileURLWithPath: configuredPath)
+            let data = try Data(contentsOf: configURL)
+            return try JSONDecoder().decode(RuntimeConfig.self, from: data)
+        }
+
         let bundle = Bundle.main
         guard let configURL = bundle.url(forResource: "runtime.config", withExtension: "json") else {
             let execURL = URL(fileURLWithPath: CommandLine.arguments[0]).deletingLastPathComponent()

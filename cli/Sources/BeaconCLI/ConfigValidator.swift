@@ -21,7 +21,7 @@ enum ConfigValidator {
         }
     }
 
-    static func validate(projectDir: URL) throws -> ValidatedConfig {
+    static func validate(projectDir: URL, requireEntryFile: Bool = true) throws -> ValidatedConfig {
         let configURL = projectDir.appendingPathComponent("runtime.config.json")
 
         guard FileManager.default.fileExists(atPath: configURL.path) else {
@@ -37,9 +37,11 @@ enum ConfigValidator {
             throw ValidationError.missingField("entry")
         }
 
-        let entryURL = projectDir.appendingPathComponent(entry)
-        guard FileManager.default.fileExists(atPath: entryURL.path) else {
-            throw ValidationError.entryFileNotFound(entry)
+        if requireEntryFile {
+            let entryURL = projectDir.appendingPathComponent(entry)
+            guard FileManager.default.fileExists(atPath: entryURL.path) else {
+                throw ValidationError.entryFileNotFound(entry)
+            }
         }
 
         guard let windowJSON = json["window"] as? [String: Any] else {
