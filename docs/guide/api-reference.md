@@ -4,10 +4,29 @@ Beacon injects a `window.beacon` object into your web app, providing access to n
 
 ## Filesystem (`window.beacon.fs`)
 
-Requires `permissions.filesystem: true` in `runtime.config.json`.
+Requires `permissions.filesystem` to be enabled in `runtime.config.json`.
+
+### Path Support
+Most filesystem methods support:
+- `~` for the current user's home directory.
+- Special tokens: `$HOME`, `$DOCUMENTS`, `$DESKTOP`, `$DOWNLOADS`, `$APP_DATA`.
+
+### `showOpenDialog(options: object): Promise<string>`
+Opens a native macOS file/folder picker. If the app is sandboxed, Beacon will automatically create a **persistent security bookmark**, allowing the app to access this path even after a restart.
+
+- `canChooseDirectories`: (boolean, default: `true`)
+- `canChooseFiles`: (boolean, default: `true`)
+
+```javascript
+const path = await window.beacon.fs.showOpenDialog({
+  canChooseDirectories: true,
+  canChooseFiles: false
+});
+console.log('User selected folder:', path);
+```
 
 ### `readFile(path: string): Promise<string>`
-
+...
 Reads the contents of a file as a string. Supports `~` for the home directory.
 
 ```javascript

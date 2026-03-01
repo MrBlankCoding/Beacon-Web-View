@@ -20,13 +20,44 @@ struct RuntimeConfig: Codable {
     }
 
     struct PermissionsConfig: Codable {
-        let filesystem: Bool
+        let filesystem: FilesystemPermission
         let notifications: Bool
         let shell: Bool
 
+        enum FilesystemPermission: Codable {
+            case disabled
+            case full
+            case scoped([String])
+
+            init(from decoder: Decoder) throws {
+                let container = try decoder.singleValueContainer()
+                if let boolValue = try? container.decode(Bool.self) {
+                    self = boolValue ? .full : .disabled
+                } else if let arrayValue = try? container.decode([String].self) {
+                    self = .scoped(arrayValue)
+                } else {
+                    self = .disabled
+                }
+            }
+
+            func encode(to encoder: Encoder) throws {
+                var container = encoder.singleValueContainer()
+                switch self {
+                case .disabled: try container.encode(false)
+                case .full: try container.encode(true)
+                case .scoped(let paths): try container.encode(paths)
+                }
+            }
+            
+            var isEnabled: Bool {
+                if case .disabled = self { return false }
+                return true
+            }
+        }
+
         init(from decoder: Decoder) throws {
             let container = try decoder.container(keyedBy: CodingKeys.self)
-            self.filesystem = try container.decodeIfPresent(Bool.self, forKey: .filesystem) ?? false
+            self.filesystem = try container.decodeIfPresent(FilesystemPermission.self, forKey: .filesystem) ?? .disabled
             self.notifications = try container.decodeIfPresent(Bool.self, forKey: .notifications) ?? false
             self.shell = try container.decodeIfPresent(Bool.self, forKey: .shell) ?? false
         }

@@ -77,6 +77,19 @@
     }
   }
 
+  async function requestAccess() {
+    try {
+      const path = await window.beacon.fs.showOpenDialog({
+        canChooseDirectories: true,
+        canChooseFiles: false
+      });
+      updateStatus(`Granted access to: ${path}`);
+      desktopFiles = await window.beacon.fs.listDirectory(path);
+    } catch (err) {
+      updateStatus(err.message, false);
+    }
+  }
+
   async function sendNotif() {
     try {
       await window.beacon.notifications.send(notif.title, notif.body);
@@ -152,16 +165,19 @@
       {:else if activeTab === 'explorer'}
         <div class="card">
           <h2>Desktop Explorer</h2>
-          <div style="display: flex; gap: 1rem; align-items: center; margin-bottom: 1rem;">
+          <div style="display: flex; gap: 1rem; align-items: center; margin-bottom: 1rem; flex-wrap: wrap;">
             <button on:click={loadFiles} disabled={isLoadingFiles}>
               {isLoadingFiles ? 'Scanning...' : 'Scan ~/Desktop'}
+            </button>
+            <button on:click={requestAccess} class="ghost">
+              Request Folder Access
             </button>
             <span>{desktopFiles.length} items found</span>
           </div>
           {#if desktopFiles.length > 0}
             <pre>{desktopFiles.join('\n')}</pre>
           {:else}
-            <p style="opacity: 0.5; text-align: center; padding: 2rem;">No items to display. Click Scan to load.</p>
+            <p style="opacity: 0.5; text-align: center; padding: 2rem;">No items to display. Click Scan or Request Access.</p>
           {/if}
         </div>
 

@@ -45,7 +45,11 @@ Configure the appearance and behavior of the application window.
 
 Gated APIs require explicit permissions to be enabled in this section.
 
-- `filesystem`: Enable `window.beacon.fs` (boolean, default: `false`).
+- `filesystem`: Enable `window.beacon.fs`. Can be:
+  - `boolean`: `true` for full access, `false` to disable.
+  - `array of strings`: List of allowed directory paths (scoped access).
+    - Supports special tokens: `$HOME`, `$DOCUMENTS`, `$DESKTOP`, `$DOWNLOADS`, `$APP_DATA`.
+    - Example: `["$DOCUMENTS", "$APP_DATA/my-app"]`
 - `notifications`: Enable `window.beacon.notifications` (boolean, default: `false`).
 - `shell`: Enable `window.beacon.shell` (boolean, default: `false`).
 

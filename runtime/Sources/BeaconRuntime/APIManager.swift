@@ -11,13 +11,21 @@ class APIManager {
 
     init(permissions: RuntimeConfig.PermissionsConfig, openWindowHandler: (() -> Void)? = nil) {
         self.permissions = permissions
-        self.fileSystemAPI = FileSystemAPI()
+        self.fileSystemAPI = FileSystemAPI(permission: permissions.filesystem)
         self.notificationAPI = NotificationAPI()
         self.shellAPI = ShellAPI()
         self.openWindowHandler = openWindowHandler
+        
+        let filesystemConfig: Any
+        switch permissions.filesystem {
+        case .disabled: filesystemConfig = false
+        case .full: filesystemConfig = true
+        case .scoped(let paths): filesystemConfig = paths
+        }
+
         let configInfo: [String: Any] = [
             "permissions": [
-                "filesystem": permissions.filesystem,
+                "filesystem": filesystemConfig,
                 "notifications": permissions.notifications,
                 "shell": permissions.shell
             ]
@@ -42,7 +50,7 @@ class APIManager {
 
         switch namespace {
         case "fs":
-            guard permissions.filesystem else {
+            guard permissions.filesystem.isEnabled else {
                 completion(.error("Permission denied: filesystem access is not enabled in runtime.config.json"))
                 return
             }
