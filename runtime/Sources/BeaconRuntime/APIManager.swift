@@ -7,12 +7,14 @@ class APIManager {
     private let notificationAPI: NotificationAPI
     private let shellAPI: ShellAPI
     private let cachedConfigJSON: String
+    private let openWindowHandler: (() -> Void)?
 
-    init(permissions: RuntimeConfig.PermissionsConfig) {
+    init(permissions: RuntimeConfig.PermissionsConfig, openWindowHandler: (() -> Void)? = nil) {
         self.permissions = permissions
         self.fileSystemAPI = FileSystemAPI()
         self.notificationAPI = NotificationAPI()
         self.shellAPI = ShellAPI()
+        self.openWindowHandler = openWindowHandler
         let configInfo: [String: Any] = [
             "permissions": [
                 "filesystem": permissions.filesystem,
@@ -75,6 +77,14 @@ class APIManager {
 
         case "getVersion":
             completion(.success("Beacon Runtime 1.0.0"))
+
+        case "openWindow":
+            guard let opener = openWindowHandler else {
+                completion(.error("openWindow not supported in this runtime build"))
+                return
+            }
+            opener()
+            completion(.success("ok"))
 
         default:
             completion(.error("Unknown app method: \(method)"))

@@ -37,7 +37,11 @@ final class RendererProcessHost {
         revealFallbackWorkItem = fallback
         DispatchQueue.main.asyncAfter(deadline: .now() + .seconds(2), execute: fallback)
 
-        window.contentView = container
+        if let base = window.contentView {
+            base.addSubview(container)
+        } else {
+            window.contentView = container
+        }
     }
 
     func reload() {

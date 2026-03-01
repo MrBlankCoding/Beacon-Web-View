@@ -3,7 +3,12 @@
     "width": 1000,
     "height": 700,
     "resizable": true,
-    "title": "Beacon Minimal Sample"
+    "title": "Beacon System Manager",
+    "frame": false,
+    "vibrancy": {
+      "enabled": true,
+      "material": "sidebar"
+    }
   },
   "permissions": {
     "filesystem": true,

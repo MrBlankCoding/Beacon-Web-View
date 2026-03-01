@@ -10,6 +10,13 @@ struct RuntimeConfig: Codable {
         let height: Int
         let resizable: Bool
         let title: String?
+        let frame: Bool?
+        let vibrancy: VibrancyConfig?
+
+        struct VibrancyConfig: Codable {
+            let enabled: Bool
+            let material: String?
+        }
     }
 
     struct PermissionsConfig: Codable {

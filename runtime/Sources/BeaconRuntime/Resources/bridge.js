@@ -73,6 +73,10 @@
             getVersion: function() {
                 return invoke("app.getVersion", {});
             }
+            ,
+            openWindow: function() {
+                return invoke("app.openWindow", {});
+            }
         }
     };
 

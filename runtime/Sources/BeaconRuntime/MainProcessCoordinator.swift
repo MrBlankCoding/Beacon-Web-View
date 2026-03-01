@@ -1,32 +1,52 @@
 import AppKit
 
-/// Hosts native app lifecycle responsibilities, similar to Electron's main process.
+/// Hosts native app lifecycle responsibilities
 final class MainProcessCoordinator {
     private let config: RuntimeConfig
-    private let window: NSWindow
-    private let rendererProcess: RendererProcessHost
+    private var windows: [NSWindow] = []
+    private var rendererProcesses: [RendererProcessHost] = []
+    private var apiManager: APIManager!
 
     init() throws {
         self.config = try RuntimeConfig.load()
-        self.window = WindowManager.createWindow(from: config.window)
+        let initialWindow = WindowManager.createWindow(from: config.window)
+        self.windows.append(initialWindow)
+        self.apiManager = APIManager(permissions: config.permissions, openWindowHandler: { [weak self] in
+            DispatchQueue.main.async {
+                self?.openWindow()
+            }
+        })
 
-        let apiManager = APIManager(permissions: config.permissions)
-        self.rendererProcess = RendererProcessHost(
-            window: window,
+        let initialRenderer = RendererProcessHost(
+            window: initialWindow,
             config: config,
             apiManager: apiManager
         )
+        self.rendererProcesses.append(initialRenderer)
+    }
+
+    private func openWindow() {
+        let newWindow = WindowManager.createWindow(from: config.window)
+        windows.append(newWindow)
+        let renderer = RendererProcessHost(window: newWindow, config: config, apiManager: apiManager)
+        rendererProcesses.append(renderer)
+        renderer.mount()
+        newWindow.makeKeyAndOrderFront(nil)
     }
 
     func start() {
-        rendererProcess.mount()
-        window.makeKeyAndOrderFront(nil)
+        for renderer in rendererProcesses {
+            renderer.mount()
+        }
+        for win in windows {
+            win.makeKeyAndOrderFront(nil)
+        }
         NSApp.activate(ignoringOtherApps: true)
         setupMenu()
     }
 
     @objc private func reloadRenderer() {
-        rendererProcess.reload()
+        for r in rendererProcesses { r.reload() }
     }
 
     private func setupMenu() {
@@ -51,10 +71,16 @@ final class MainProcessCoordinator {
 
         let viewMenuItem = NSMenuItem()
         let viewMenu = NSMenu(title: "View")
+        viewMenu.addItem(withTitle: "New Window", action: #selector(newWindow), keyEquivalent: "n")
+        viewMenu.addItem(NSMenuItem.separator())
         viewMenu.addItem(withTitle: "Reload", action: #selector(reloadRenderer), keyEquivalent: "r")
         viewMenuItem.submenu = viewMenu
         mainMenu.addItem(viewMenuItem)
 
         NSApp.mainMenu = mainMenu
+    }
+
+    @objc private func newWindow() {
+        openWindow()
     }
 }
