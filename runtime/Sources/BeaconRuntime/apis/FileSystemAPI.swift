@@ -12,8 +12,27 @@ class FileSystemAPI {
             listDirectory(args: args, completion: completion)
         case "exists":
             exists(args: args, completion: completion)
+        case "isDirectory":
+            isDirectory(args: args, completion: completion)
         default:
             completion(.error("Unknown filesystem method: \(method)"))
+        }
+    }
+
+    private func isDirectory(args: [String: Any], completion: @escaping (APIResult) -> Void) {
+        guard let path = args["path"] as? String else {
+            completion(.error("fs.isDirectory requires a 'path' argument"))
+            return
+        }
+
+        let expandedPath = NSString(string: path).expandingTildeInPath
+        var isDir: ObjCBool = false
+        let exists = FileManager.default.fileExists(atPath: expandedPath, isDirectory: &isDir)
+
+        if exists && isDir.boolValue {
+            completion(.successJSON("true"))
+        } else {
+            completion(.successJSON("false"))
         }
     }
 

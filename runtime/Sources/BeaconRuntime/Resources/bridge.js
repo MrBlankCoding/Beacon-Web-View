@@ -51,6 +51,9 @@
             },
             exists: function(path) {
                 return invoke("fs.exists", { path: path });
+            },
+            isDirectory: function(path) {
+                return invoke("fs.isDirectory", { path: path });
             }
         },
         notifications: {
