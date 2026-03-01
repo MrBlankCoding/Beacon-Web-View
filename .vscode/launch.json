@@ -1,0 +1,44 @@
+{
+    "configurations": [
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:Beacon Web View}/cli",
+            "name": "Debug beacon (cli)",
+            "target": "beacon",
+            "configuration": "debug",
+            "preLaunchTask": "swift: Build Debug beacon (cli)"
+        },
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:Beacon Web View}/cli",
+            "name": "Release beacon (cli)",
+            "target": "beacon",
+            "configuration": "release",
+            "preLaunchTask": "swift: Build Release beacon (cli)"
+        },
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:Beacon Web View}/runtime",
+            "name": "Debug BeaconRuntime (runtime)",
+            "target": "BeaconRuntime",
+            "configuration": "debug",
+            "preLaunchTask": "swift: Build Debug BeaconRuntime (runtime)"
+        },
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:Beacon Web View}/runtime",
+            "name": "Release BeaconRuntime (runtime)",
+            "target": "BeaconRuntime",
+            "configuration": "release",
+            "preLaunchTask": "swift: Build Release BeaconRuntime (runtime)"
+        }
+    ]
+}

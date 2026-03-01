@@ -1,0 +1,14 @@
+{
+  "window": {
+    "width": 1000,
+    "height": 700,
+    "resizable": true,
+    "title": "Beacon Minimal Sample"
+  },
+  "permissions": {
+    "filesystem": true,
+    "notifications": true,
+    "shell": true
+  },
+  "entry": "build/index.html"
+}
