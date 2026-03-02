@@ -25,8 +25,8 @@ class WebViewManager: NSObject, WKNavigationDelegate {
             }
         }
     }
+    let bridgeHandler: BridgeHandler
     private let config: RuntimeConfig
-    private let bridgeHandler: BridgeHandler
     private var didCompleteInitialLoad = false
     private static let bridgeScript = loadBridgeScript()
 

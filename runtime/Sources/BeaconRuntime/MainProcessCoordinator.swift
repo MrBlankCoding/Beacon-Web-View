@@ -6,16 +6,27 @@ final class MainProcessCoordinator {
     private var windows: [NSWindow] = []
     private var rendererProcesses: [RendererProcessHost] = []
     private var apiManager: APIManager!
+    private let trayManager = TrayManager()
+    private let shortcutsManager = ShortcutsManager()
 
     init() throws {
         self.config = try RuntimeConfig.load()
         let initialWindow = WindowManager.createWindow(from: config.window)
         self.windows.append(initialWindow)
-        self.apiManager = APIManager(permissions: config.permissions, openWindowHandler: { [weak self] in
-            DispatchQueue.main.async {
-                self?.openWindow()
+        
+        self.apiManager = APIManager(
+            permissions: config.permissions,
+            trayManager: trayManager,
+            shortcutsManager: shortcutsManager,
+            onEvent: { [weak self] name, detail in
+                self?.broadcastEvent(name: name, detail: detail)
+            },
+            openWindowHandler: { [weak self] in
+                DispatchQueue.main.async {
+                    self?.openWindow()
+                }
             }
-        })
+        )
 
         let initialRenderer = RendererProcessHost(
             window: initialWindow,
@@ -23,6 +34,12 @@ final class MainProcessCoordinator {
             apiManager: apiManager
         )
         self.rendererProcesses.append(initialRenderer)
+    }
+
+    private func broadcastEvent(name: String, detail: Any) {
+        for renderer in rendererProcesses {
+            renderer.bridgeHandler.emitEvent(name: name, detail: detail)
+        }
     }
 
     private func openWindow() {

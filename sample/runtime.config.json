@@ -3,8 +3,8 @@
     "width": 1000,
     "height": 700,
     "resizable": true,
-    "title": "Beacon System Manager",
-    "frame": false,
+    "title": "Beacon Demo",
+    "frame": true,
     "vibrancy": {
       "enabled": true,
       "material": "sidebar"
@@ -13,7 +13,10 @@
   "permissions": {
     "filesystem": true,
     "notifications": true,
-    "shell": true
+    "shell": true,
+    "system": true,
+    "tray": true,
+    "shortcuts": true
   },
   "entry": "build/index.html"
 }

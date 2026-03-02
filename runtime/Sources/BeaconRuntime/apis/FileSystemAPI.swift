@@ -27,17 +27,24 @@ class FileSystemAPI {
         UserDefaults.standard.set(bookmarks, forKey: "beacon_fs_bookmarks")
     }
 
+    public func addBookmark(url: URL) {
+        do {
+            let bookmarkData = try url.bookmarkData(options: .withSecurityScope, includingResourceValuesForKeys: nil, relativeTo: nil)
+            self.bookmarks[url.path] = bookmarkData
+            self.saveBookmarks()
+        } catch {
+            print("Failed to create bookmark: \(error.localizedDescription)")
+        }
+    }
+
     private static func expandPath(_ path: String) -> String {
         var expanded = path
         let home = FileManager.default.homeDirectoryForCurrentUser.path
         
-        // Handle special tokens
         expanded = expanded.replacingOccurrences(of: "$HOME", with: home)
         expanded = expanded.replacingOccurrences(of: "$DOCUMENTS", with: (home as NSString).appendingPathComponent("Documents"))
         expanded = expanded.replacingOccurrences(of: "$DESKTOP", with: (home as NSString).appendingPathComponent("Desktop"))
         expanded = expanded.replacingOccurrences(of: "$DOWNLOADS", with: (home as NSString).appendingPathComponent("Downloads"))
-        
-        // Handle App Data (Library/Application Support)
         if expanded.contains("$APP_DATA") {
             let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first?.path ?? (home as NSString).appendingPathComponent("Library/Application Support")
             expanded = expanded.replacingOccurrences(of: "$APP_DATA", with: appSupport)
@@ -51,15 +58,12 @@ class FileSystemAPI {
         if case .disabled = permission { return false }
         
         let expandedTarget = FileSystemAPI.expandPath(path)
-        
-        // Check static allowed paths
         for allowed in allowedPaths {
             if expandedTarget == allowed || expandedTarget.hasPrefix(allowed + "/") {
                 return true
             }
         }
         
-        // Check dynamic bookmarks
         for (bookmarkedPath, _) in bookmarks {
             if expandedTarget == bookmarkedPath || expandedTarget.hasPrefix(bookmarkedPath + "/") {
                 return true
@@ -72,7 +76,6 @@ class FileSystemAPI {
     private func resolveBookmark(for path: String) -> (URL, Bool) {
         let expanded = FileSystemAPI.expandPath(path)
         
-        // Find the best matching bookmark (longest prefix)
         let matchingPaths = bookmarks.keys.filter { expanded == $0 || expanded.hasPrefix($0 + "/") }
             .sorted { $0.count > $1.count }
         
@@ -87,7 +90,6 @@ class FileSystemAPI {
                 print("Bookmark for \(bestMatch) is stale")
             }
             
-            // If the target is a subpath of the bookmark, append the relative part
             var finalURL = url
             if expanded.count > bestMatch.count {
                 let relativePath = String(expanded.dropFirst(bestMatch.count)).trimmingCharacters(in: CharacterSet(charactersIn: "/"))
@@ -102,7 +104,6 @@ class FileSystemAPI {
     }
 
     func handle(method: String, args: [String: Any], completion: @escaping (APIResult) -> Void) {
-        // Shared path check for most methods
         if let path = args["path"] as? String {
             if !isPathAllowed(path) {
                 completion(.error("Permission denied: path '\(path)' is outside of allowed scopes."))

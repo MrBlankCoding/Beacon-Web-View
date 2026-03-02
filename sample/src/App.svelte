@@ -1,113 +1,38 @@
 <script>
   import { onMount } from "svelte";
+  import Dashboard from "./tabs/Dashboard.svelte";
+  import Explorer from "./tabs/Explorer.svelte";
+  import Terminal from "./tabs/Terminal.svelte";
+  import Notifications from "./tabs/Notifications.svelte";
+  import Clipboard from "./tabs/Clipboard.svelte";
+  import Tray from "./tabs/Tray.svelte";
+  import Shortcuts from "./tabs/Shortcuts.svelte";
+  import Storage from "./tabs/Storage.svelte";
+  import Console from "./tabs/Console.svelte";
+  import { log, logError } from "./consoleStore";
 
   let activeTab = "dashboard";
   let runtimeVersion = "Checking...";
-  let status = { message: "Initializing...", ok: true };
-  let diskUsage = 0;
-  let cpuLoad = 0;
-  let memoryUsage = 0;
-  let uptime = "Checking...";
-  
-  let shellCommand = "sysctl -n machdep.cpu.brand_string";
-  let shellOutput = "";
-  let isRunningCommand = false;
-
-  let desktopFiles = [];
-  let isLoadingFiles = false;
-
-  let notif = { title: "System Alert", body: "A message from Beacon" };
-
-  async function updateStatus(msg, ok = true) {
-    status = { message: msg, ok };
-    setTimeout(() => {
-      if (status.message === msg) status.message = "Ready";
-    }, 5000);
-  }
-
-  async function refreshStats() {
-    try {
-      // Memory Usage (simulated via shell)
-      const vmStat = await window.beacon.shell.exec("vm_stat | grep 'Pages free'");
-      const freePagesMatch = vmStat.match(/(\d+)/);
-      if (freePagesMatch) {
-        // Very rough estimation just to show dynamic data
-        memoryUsage = Math.floor(Math.random() * 40) + 30; 
-      }
-
-      // Disk Usage
-      const df = await window.beacon.shell.exec("df -h / | tail -1");
-      const parts = df.split(/\s+/);
-      const percent = parts[4] ? parseInt(parts[4]) : 0;
-      diskUsage = percent;
-
-      // Uptime
-      uptime = await window.beacon.shell.exec("uptime | cut -d ',' -f 1 | cut -d ' ' -f 3-");
-      
-      // Random CPU for visual effect
-      cpuLoad = Math.floor(Math.random() * 20) + 5;
-    } catch (err) {
-      console.error("Stats error", err);
-    }
-  }
-
-  async function runShell() {
-    if (!shellCommand.trim()) return;
-    isRunningCommand = true;
-    try {
-      shellOutput = await window.beacon.shell.exec(shellCommand);
-      updateStatus("Command executed successfully");
-    } catch (err) {
-      shellOutput = `Error: ${err.message}`;
-      updateStatus(err.message, false);
-    } finally {
-      isRunningCommand = false;
-    }
-  }
-
-  async function loadFiles() {
-    isLoadingFiles = true;
-    try {
-      desktopFiles = await window.beacon.fs.listDirectory("~/Desktop");
-      updateStatus(`Found ${desktopFiles.length} items on Desktop`);
-    } catch (err) {
-      updateStatus(err.message, false);
-    } finally {
-      isLoadingFiles = false;
-    }
-  }
-
-  async function requestAccess() {
-    try {
-      const path = await window.beacon.fs.showOpenDialog({
-        canChooseDirectories: true,
-        canChooseFiles: false
-      });
-      updateStatus(`Granted access to: ${path}`);
-      desktopFiles = await window.beacon.fs.listDirectory(path);
-    } catch (err) {
-      updateStatus(err.message, false);
-    }
-  }
-
-  async function sendNotif() {
-    try {
-      await window.beacon.notifications.send(notif.title, notif.body);
-      updateStatus("Notification sent");
-    } catch (err) {
-      updateStatus(err.message, false);
-    }
-  }
+  let isRuntimeDetected = false;
+  let isCheckingRuntime = true;
 
   onMount(async () => {
+    // Small delay to ensure bridge.js has executed (it's injected at document start)
+    await new Promise(r => setTimeout(r, 100));
+    
     try {
-      runtimeVersion = await window.beacon.app.getVersion();
-      updateStatus("Ready");
-      refreshStats();
-      const interval = setInterval(refreshStats, 10000);
-      return () => clearInterval(interval);
+      if (window.beacon && window.beacon.app) {
+        runtimeVersion = await window.beacon.app.getVersion();
+        isRuntimeDetected = true;
+        log("Beacon runtime initialized");
+      } else {
+        throw new Error("Bridge not found");
+      }
     } catch (err) {
-      updateStatus("Beacon runtime not detected", false);
+      isRuntimeDetected = false;
+      logError("Beacon runtime not detected. Native APIs will be unavailable.");
+    } finally {
+      isCheckingRuntime = false;
     }
   });
 </script>
@@ -123,95 +48,56 @@
       <nav>
         <ul>
           <li class:active={activeTab === 'dashboard'} on:click={() => activeTab = 'dashboard'}>Dashboard</li>
-          <li class:active={activeTab === 'explorer'} on:click={() => activeTab = 'explorer'}>File Explorer</li>
+          <li class:active={activeTab === 'explorer'} on:click={() => activeTab = 'explorer'}>Filesystem</li>
           <li class:active={activeTab === 'terminal'} on:click={() => activeTab = 'terminal'}>Terminal</li>
           <li class:active={activeTab === 'notifications'} on:click={() => activeTab = 'notifications'}>Notifications</li>
+          <li class:active={activeTab === 'clipboard'} on:click={() => activeTab = 'clipboard'}>Clipboard</li>
+          <li class:active={activeTab === 'tray'} on:click={() => activeTab = 'tray'}>Tray</li>
+          <li class:active={activeTab === 'shortcuts'} on:click={() => activeTab = 'shortcuts'}>Shortcuts</li>
+          <li class:active={activeTab === 'storage'} on:click={() => activeTab = 'storage'}>Storage</li>
+          <li class:active={activeTab === 'console'} on:click={() => activeTab = 'console'}>Console</li>
         </ul>
       </nav>
     </aside>
 
     <div class="view">
-      {#if activeTab === 'dashboard'}
-        <div class="grid">
-          <div class="card">
-            <h2>System Health</h2>
-            <div class="stat-row">
-              <span>CPU Load</span>
-              <span>{cpuLoad}%</span>
-            </div>
-            <div class="progress-bar"><div class="progress-fill" style="width: {cpuLoad}%"></div></div>
-
-            <div class="stat-row">
-              <span>Memory Usage</span>
-              <span>{memoryUsage}%</span>
-            </div>
-            <div class="progress-bar"><div class="progress-fill" style="width: {memoryUsage}%"></div></div>
-
-            <div class="stat-row">
-              <span>Disk Space (/)</span>
-              <span>{diskUsage}%</span>
-            </div>
-            <div class="progress-bar"><div class="progress-fill" style="width: {diskUsage}%"></div></div>
-          </div>
-
-          <div class="card">
-            <h2>Machine Info</h2>
-            <p><strong>Uptime:</strong> {uptime}</p>
-            <p><strong>OS:</strong> macOS</p>
-            <button on:click={refreshStats}>Refresh Now</button>
-          </div>
+      {#if isCheckingRuntime}
+        <div class="card" style="text-align: center; padding: 3rem;">
+          <p>Connecting to Beacon Runtime...</p>
         </div>
-
-      {:else if activeTab === 'explorer'}
-        <div class="card">
-          <h2>Desktop Explorer</h2>
-          <div style="display: flex; gap: 1rem; align-items: center; margin-bottom: 1rem; flex-wrap: wrap;">
-            <button on:click={loadFiles} disabled={isLoadingFiles}>
-              {isLoadingFiles ? 'Scanning...' : 'Scan ~/Desktop'}
-            </button>
-            <button on:click={requestAccess} class="ghost">
-              Request Folder Access
-            </button>
-            <span>{desktopFiles.length} items found</span>
-          </div>
-          {#if desktopFiles.length > 0}
-            <pre>{desktopFiles.join('\n')}</pre>
-          {:else}
-            <p style="opacity: 0.5; text-align: center; padding: 2rem;">No items to display. Click Scan or Request Access.</p>
-          {/if}
+      {:else if !isRuntimeDetected}
+        <div class="card" style="border-color: #ff3b30; background: rgba(255, 59, 48, 0.1);">
+          <p style="color: #ff3b30; font-weight: bold; margin: 0;">Runtime Not Detected</p>
+          <p style="font-size: 0.9rem; margin-top: 0.5rem;">Please run this application within the Beacon Web View runtime to access native features.</p>
         </div>
-
-      {:else if activeTab === 'terminal'}
-        <div class="card">
-          <h2>Beacon Shell</h2>
-          <input type="text" bind:value={shellCommand} placeholder="Enter command..." on:keydown={(e) => e.key === 'Enter' && runShell()} />
-          <button on:click={runShell} disabled={isRunningCommand}>
-            {isRunningCommand ? 'Running...' : 'Execute'}
-          </button>
-          {#if shellOutput}
-            <pre style="margin-top: 1.5rem;">{shellOutput}</pre>
-          {/if}
-        </div>
-
-      {:else if activeTab === 'notifications'}
-        <div class="card">
-          <h2>Test Notifications</h2>
-          <div style="max-width: 400px;">
-            <label>Title</label>
-            <input type="text" bind:value={notif.title} />
-            <label>Message</label>
-            <input type="text" bind:value={notif.body} />
-            <button on:click={sendNotif}>Dispatch Notification</button>
-          </div>
-        </div>
+      {:else}
+        {#if activeTab === 'dashboard'}
+          <Dashboard {runtimeVersion} />
+        {:else if activeTab === 'explorer'}
+          <Explorer />
+        {:else if activeTab === 'terminal'}
+          <Terminal />
+        {:else if activeTab === 'notifications'}
+          <Notifications />
+        {:else if activeTab === 'clipboard'}
+          <Clipboard />
+        {:else if activeTab === 'tray'}
+          <Tray />
+        {:else if activeTab === 'shortcuts'}
+          <Shortcuts />
+        {:else if activeTab === 'storage'}
+          <Storage />
+        {:else if activeTab === 'console'}
+          <Console />
+        {/if}
       {/if}
     </div>
   </main>
 
   <footer>
     <div class="status">
-      <span class="status-dot {status.ok ? 'status-ready' : 'status-error'}"></span>
-      {status.message}
+      <span class="status-dot {isRuntimeDetected ? 'status-ready' : 'status-error'}"></span>
+      {isRuntimeDetected ? 'Connected' : 'Disconnected'}
     </div>
     <div class="links">
       Beacon Runtime Project

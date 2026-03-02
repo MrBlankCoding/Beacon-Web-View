@@ -1,88 +1,89 @@
 (function() {
-    "use strict";
+    if (window.beacon) return;
 
-    const pending = new Map();
-    let callId = 0;
+    const callbacks = new Map();
+    let callIdCounter = 0;
 
-    function invoke(command, args) {
-        return new Promise(function(resolve, reject) {
-            const id = String(++callId);
-            pending.set(id, { resolve: resolve, reject: reject });
-            window.webkit.messageHandlers.native.postMessage({
-                id: id,
-                command: command,
-                args: args || {}
-            });
+    // Internal callback handler
+    window.__beacon_nativeCallback = function(id, success, result) {
+        const cb = callbacks.get(id);
+        if (cb) {
+            callbacks.delete(id);
+            if (success) cb.resolve(result);
+            else cb.reject(new Error(result));
+        }
+    };
+
+    // Batch callback handler for performance
+    window.__beacon_nativeCallbackBatch = function(batch) {
+        for (let i = 0; i < batch.length; i++) {
+            const [id, success, result] = batch[i];
+            window.__beacon_nativeCallback(id, success, result);
+        }
+    };
+
+    function callNative(command, args = {}) {
+        return new Promise((resolve, reject) => {
+            const id = (callIdCounter++).toString();
+            callbacks.set(id, { resolve, reject });
+            window.webkit.messageHandlers.native.postMessage({ id, command, args });
         });
     }
 
-    window.__beacon_nativeCallback = function(id, ok, payload) {
-        const entry = pending.get(String(id));
-        if (!entry) return;
-
-        pending.delete(String(id));
-        if (ok) {
-            entry.resolve(payload);
-        } else {
-            const message = typeof payload === "string" ? payload : "Unknown error";
-            entry.reject(new Error(message));
-        }
-    };
-
-    window.__beacon_nativeCallbackBatch = function(batch) {
-        if (!Array.isArray(batch)) return;
-        for (let i = 0; i < batch.length; i += 1) {
-            const item = batch[i];
-            if (!Array.isArray(item) || item.length < 3) continue;
-            window.__beacon_nativeCallback(item[0], item[1], item[2]);
-        }
-    };
-
     window.beacon = {
         fs: {
-            readFile: function(path) {
-                return invoke("fs.readFile", { path: path });
-            },
-            writeFile: function(path, content) {
-                return invoke("fs.writeFile", { path: path, content: content });
-            },
-            listDirectory: function(path) {
-                return invoke("fs.listDirectory", { path: path });
-            },
-            exists: function(path) {
-                return invoke("fs.exists", { path: path });
-            },
-            isDirectory: function(path) {
-                return invoke("fs.isDirectory", { path: path });
-            }
+            readFile: (path) => callNative('fs.readFile', { path }),
+            writeFile: (path, content) => callNative('fs.writeFile', { path, content }),
+            listDirectory: (path) => callNative('fs.listDirectory', { path }),
+            exists: (path) => callNative('fs.exists', { path }),
+            isDirectory: (path) => callNative('fs.isDirectory', { path }),
+        },
+        dialog: {
+            showOpenDialog: (options) => callNative('dialog.showOpenDialog', options),
+            showSaveDialog: (options) => callNative('dialog.showSaveDialog', options),
+        },
+        clipboard: {
+            readText: () => callNative('clipboard.readText'),
+            writeText: (text) => callNative('clipboard.writeText', { text }),
         },
         notifications: {
-            send: function(title, body) {
-                return invoke("notifications.send", { title: title, body: body });
-            }
+            send: (title, body) => callNative('notifications.send', { title, body }),
         },
         shell: {
-            exec: function(command) {
-                return invoke("shell.exec", { command: command });
-            }
+            exec: (command) => callNative('shell.exec', { command }),
+        },
+        menu: {
+            showContextMenu: (items) => callNative('menu.showContextMenu', { items }),
+        },
+        system: {
+            getStats: () => callNative('system.getStats'),
+            getMachineInfo: () => callNative('system.getMachineInfo'),
+            getStorageInfo: () => callNative('system.getStorageInfo'),
+        },
+        tray: {
+            setIcon: (image) => callNative('tray.setIcon', { image }),
+            setMenu: (items) => callNative('tray.setMenu', { items }),
+            destroy: () => callNative('tray.destroy'),
+        },
+        shortcuts: {
+            register: (shortcut) => callNative('shortcuts.register', { shortcut }),
+            unregisterAll: () => callNative('shortcuts.unregisterAll'),
         },
         app: {
-            getConfig: function() {
-                return invoke("app.getConfig", {});
-            },
-            getVersion: function() {
-                return invoke("app.getVersion", {});
-            }
-            ,
-            openWindow: function() {
-                return invoke("app.openWindow", {});
-            }
+            getVersion: () => callNative('app.getVersion'),
+            getConfig: () => callNative('app.getConfig'),
+            openWindow: () => callNative('app.openWindow'),
         }
     };
 
-    Object.freeze(window.beacon.fs);
-    Object.freeze(window.beacon.notifications);
-    Object.freeze(window.beacon.shell);
-    Object.freeze(window.beacon.app);
-    Object.freeze(window.beacon);
+    // Initialize global event listeners for Beacon events
+    window.addEventListener('beacon-tray-click', (e) => {
+        if (window.onBeaconTrayClick) window.onBeaconTrayClick(e.detail);
+    });
+    window.addEventListener('beacon-shortcut', (e) => {
+        if (window.onBeaconShortcut) window.onBeaconShortcut(e.detail);
+    });
+    window.addEventListener('beacon-menu-click', (e) => {
+        if (window.onBeaconMenuClick) window.onBeaconMenuClick(e.detail);
+    });
 })();

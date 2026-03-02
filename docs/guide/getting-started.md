@@ -1,72 +1,74 @@
 # Getting Started
 
-Beacon Web View allows you to package any static web project into a native macOS application using the system's native WebKit engine.
+Package a static web app into a native macOS app using Beacon.
 
 ## Prerequisites
 
 - macOS
-- [Swift](https://swift.org/download/) (for the CLI and runtime)
-- [Node.js](https://nodejs.org/) (for your web project)
+- Swift toolchain
+- Node.js (for your web app)
 
-## Installation
-
-Currently, Beacon is in early development. You can clone the repository to get started:
+## 1. Clone Beacon
 
 ```bash
 git clone https://github.com/MrBlankCoding/Beacon-Web-View
-cd beacon
+cd Beacon-Web-View
 ```
 
-## Creating Your First App
+## 2. Build Your Web App
 
-### 1. Prepare Your Web Project
-
-Ensure your web project (e.g., Vite, React, Svelte) is built into a static directory (usually `dist` or `build`).
+In your web project:
 
 ```bash
-cd my-web-app
 npm run build
 ```
 
-### 2. Configure Beacon
-
-Create a `runtime.config.json` file in your web project's root:
+## 3. Create `runtime.config.json`
 
 ```json
 {
   "window": {
-    "width": 800,
-    "height": 600,
+    "width": 1000,
+    "height": 700,
+    "resizable": true,
     "title": "My Beacon App"
+  },
+  "permissions": {
+    "filesystem": true,
+    "notifications": true,
+    "shell": false
   },
   "entry": "dist/index.html"
 }
 ```
 
-### 3. Build the CLI
+## 4. Build the CLI
 
 ```bash
-cd beacon/cli
+cd cli
 swift build
 ```
 
-### 4. Package Your App
-
-Use the Beacon CLI to package your app into a native macOS bundle:
+## 5. Package a macOS App
 
 ```bash
-./beacon/cli/.build/debug/beacon build ./my-web-app --output ./output --name MyBeaconApp
+./.build/debug/beacon build /path/to/my-web-app --output /path/to/output --name MyBeaconApp
 ```
 
-Your app will be available in the `./output` directory as `MyBeaconApp.app`.
+The generated bundle will be:
 
-## Development Mode
+- `/path/to/output/MyBeaconApp.app`
 
-Beacon supports hot-reloading by pointing the runtime to your development server:
+## Dev Mode (Hot Reload)
 
-1. Start your web app's dev server: `npm run dev`
+1. Start your web dev server (for example Vite):
+
+```bash
+npm run dev
+```
+
 2. Run Beacon in dev mode:
 
 ```bash
-./beacon/cli/.build/debug/beacon dev ./my-web-app --url http://localhost:5173
+./.build/debug/beacon dev /path/to/my-web-app --url http://localhost:5173
 ```

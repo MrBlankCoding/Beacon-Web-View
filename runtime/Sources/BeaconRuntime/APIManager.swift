@@ -6,14 +6,44 @@ class APIManager {
     private let fileSystemAPI: FileSystemAPI
     private let notificationAPI: NotificationAPI
     private let shellAPI: ShellAPI
+    private let clipboardAPI: ClipboardAPI
+    private let dialogAPI: DialogAPI
+    private let trayAPI: TrayAPI
+    private let shortcutsAPI: ShortcutsAPI
+    private let systemAPI: SystemAPI
+    private let menuAPI: MenuAPI
     private let cachedConfigJSON: String
     private let openWindowHandler: (() -> Void)?
 
-    init(permissions: RuntimeConfig.PermissionsConfig, openWindowHandler: (() -> Void)? = nil) {
+    init(
+        permissions: RuntimeConfig.PermissionsConfig,
+        trayManager: TrayManager,
+        shortcutsManager: ShortcutsManager,
+        onEvent: @escaping (String, Any) -> Void,
+        openWindowHandler: (() -> Void)? = nil
+    ) {
         self.permissions = permissions
-        self.fileSystemAPI = FileSystemAPI(permission: permissions.filesystem)
+        let fs = FileSystemAPI(permission: permissions.filesystem)
+        self.fileSystemAPI = fs
         self.notificationAPI = NotificationAPI()
         self.shellAPI = ShellAPI()
+        self.clipboardAPI = ClipboardAPI()
+        self.dialogAPI = DialogAPI(onBookmarkCreated: { url in
+            fs.addBookmark(url: url)
+        })
+        self.trayAPI = TrayAPI(trayManager: trayManager, onMenuItemClick: { id in
+            onEvent("beacon-tray-click", id)
+        })
+        self.shortcutsAPI = ShortcutsAPI(manager: shortcutsManager, onShortcutPressed: { combo in
+            onEvent("beacon-shortcut", combo)
+        })
+        shortcutsManager.onShortcutTriggered = { combo in
+            onEvent("beacon-shortcut", combo)
+        }
+        self.systemAPI = SystemAPI()
+        self.menuAPI = MenuAPI(onMenuItemClick: { id in
+            onEvent("beacon-menu-click", id)
+        })
         self.openWindowHandler = openWindowHandler
         
         let filesystemConfig: Any
@@ -69,6 +99,24 @@ class APIManager {
                 return
             }
             shellAPI.handle(method: method, args: args, completion: completion)
+
+        case "dialog":
+            dialogAPI.handle(method: method, args: args, completion: completion)
+
+        case "tray":
+            trayAPI.handle(method: method, args: args, completion: completion)
+
+        case "shortcuts":
+            shortcutsAPI.handle(method: method, args: args, completion: completion)
+
+        case "system":
+            systemAPI.handle(method: method, args: args, completion: completion)
+
+        case "menu":
+            menuAPI.handle(method: method, args: args, completion: completion)
+
+        case "clipboard":
+            clipboardAPI.handle(method: method, args: args, completion: completion)
 
         case "app":
             handleAppCommand(method: method, args: args, completion: completion)

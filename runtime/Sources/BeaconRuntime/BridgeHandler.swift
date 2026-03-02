@@ -102,6 +102,23 @@ class BridgeHandler: NSObject, WKScriptMessageHandler {
         }
     }
 
+    func emitEvent(name: String, detail: Any) {
+        let detailJSON: String
+        if let data = try? JSONSerialization.data(withJSONObject: detail),
+           let json = String(data: data, encoding: .utf8) {
+            detailJSON = json
+        } else if let s = detail as? String {
+            detailJSON = quoteJS(s)
+        } else {
+            detailJSON = "null"
+        }
+
+        let js = "window.dispatchEvent(new CustomEvent(\(quoteJS(name)), { detail: \(detailJSON) }));"
+        DispatchQueue.main.async {
+            self.webView?.evaluateJavaScript(js)
+        }
+    }
+
     private func quoteJS(_ value: String) -> String {
         let escaped = value
             .replacingOccurrences(of: "\\", with: "\\\\")

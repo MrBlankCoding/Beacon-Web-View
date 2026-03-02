@@ -8,6 +8,10 @@ final class RendererProcessHost {
     private let webViewManager: WebViewManager
     private var loadingView: NSView?
     private var revealFallbackWorkItem: DispatchWorkItem?
+    
+    var bridgeHandler: BridgeHandler {
+        return webViewManager.bridgeHandler
+    }
 
     init(window: NSWindow, config: RuntimeConfig, apiManager: APIManager) {
         self.window = window

@@ -10,6 +10,9 @@ hero:
       text: Get Started
       link: /guide/getting-started
     - theme: alt
+      text: API Reference
+      link: /guide/api-overview
+    - theme: alt
       text: View on GitHub
       link: https://github.com/MrBlankCoding/Beacon-Web-View
 
@@ -19,7 +22,7 @@ features:
   - title: Native WebKit
     details: Uses the system's native WebKit engine for performance and efficiency.
   - title: Simple JavaScript API
-    details: Access filesystem, notifications, and shell directly from your web app.
+    details: Access app, filesystem, dialogs, tray, shortcuts, clipboard, system stats, notifications, and more.
   - title: Easy Packaging
     details: A simple CLI tool to bundle your web app into a native .app.
 ---

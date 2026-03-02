@@ -90,13 +90,13 @@ struct DevCommand: ParsableCommand {
         let cliPackageDir = cliBinDir.deletingLastPathComponent().deletingLastPathComponent()
 
         let candidates: [URL] = [
-            cliBinDir.appendingPathComponent("BeaconRuntime"),
             cwd.appendingPathComponent("runtime/.build/debug/BeaconRuntime"),
             cwd.appendingPathComponent("runtime/.build/release/BeaconRuntime"),
             projectURL.deletingLastPathComponent().appendingPathComponent("runtime/.build/debug/BeaconRuntime"),
             projectURL.deletingLastPathComponent().appendingPathComponent("runtime/.build/release/BeaconRuntime"),
             cliPackageDir.deletingLastPathComponent().appendingPathComponent("runtime/.build/debug/BeaconRuntime"),
-            cliPackageDir.deletingLastPathComponent().appendingPathComponent("runtime/.build/release/BeaconRuntime")
+            cliPackageDir.deletingLastPathComponent().appendingPathComponent("runtime/.build/release/BeaconRuntime"),
+            cliBinDir.appendingPathComponent("BeaconRuntime")
         ]
 
         if let found = candidates.first(where: { fm.fileExists(atPath: $0.path) }) {

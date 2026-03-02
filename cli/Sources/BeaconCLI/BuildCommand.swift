@@ -118,30 +118,42 @@ struct BuildCommand: ParsableCommand {
         let cwd = URL(fileURLWithPath: fm.currentDirectoryPath).standardized
         let cliBinDir = URL(fileURLWithPath: CommandLine.arguments[0]).standardized.deletingLastPathComponent()
         let cliPackageDir = cliBinDir.deletingLastPathComponent().deletingLastPathComponent()
+        let runtimeProjectCandidates: [URL] = [
+            cwd.appendingPathComponent("runtime"),
+            projectURL.deletingLastPathComponent().appendingPathComponent("runtime"),
+            cliPackageDir.deletingLastPathComponent().appendingPathComponent("runtime")
+        ]
 
         let candidates: [URL] = [
-            cliBinDir.appendingPathComponent("BeaconRuntime"),
             cwd.appendingPathComponent("runtime/.build/debug/BeaconRuntime"),
             cwd.appendingPathComponent("runtime/.build/release/BeaconRuntime"),
             projectURL.deletingLastPathComponent().appendingPathComponent("runtime/.build/debug/BeaconRuntime"),
             projectURL.deletingLastPathComponent().appendingPathComponent("runtime/.build/release/BeaconRuntime"),
             cliPackageDir.deletingLastPathComponent().appendingPathComponent("runtime/.build/debug/BeaconRuntime"),
-            cliPackageDir.deletingLastPathComponent().appendingPathComponent("runtime/.build/release/BeaconRuntime")
+            cliPackageDir.deletingLastPathComponent().appendingPathComponent("runtime/.build/release/BeaconRuntime"),
+            cliBinDir.appendingPathComponent("BeaconRuntime")
         ]
 
         if let found = candidates.first(where: { fm.fileExists(atPath: $0.path) }) {
+            if !skipRuntimeBuild,
+               let runtimeProjectDir = runtimeProjectCandidates.first(where: {
+                   fm.fileExists(atPath: $0.appendingPathComponent("Package.swift").path)
+               }),
+               found.standardizedFileURL.path.hasPrefix(runtimeProjectDir.appendingPathComponent(".build").standardizedFileURL.path + "/") {
+                print("Refreshing runtime at: \(runtimeProjectDir.path)")
+                try runCommand(
+                    executable: "/usr/bin/env",
+                    arguments: ["swift", "build"],
+                    directory: runtimeProjectDir
+                )
+                return try resolveBuiltRuntimeBinary(in: runtimeProjectDir)
+            }
             return found.standardized
         }
 
         if skipRuntimeBuild {
             throw PackagerError.runtimeBinaryNotFound(candidates[0].path)
         }
-
-        let runtimeProjectCandidates: [URL] = [
-            cwd.appendingPathComponent("runtime"),
-            projectURL.deletingLastPathComponent().appendingPathComponent("runtime"),
-            cliPackageDir.deletingLastPathComponent().appendingPathComponent("runtime")
-        ]
 
         guard let runtimeProjectDir = runtimeProjectCandidates.first(where: {
             fm.fileExists(atPath: $0.appendingPathComponent("Package.swift").path)
@@ -155,12 +167,7 @@ struct BuildCommand: ParsableCommand {
             arguments: ["swift", "build"],
             directory: runtimeProjectDir
         )
-
-        let built = runtimeProjectDir.appendingPathComponent(".build/debug/BeaconRuntime")
-        guard fm.fileExists(atPath: built.path) else {
-            throw PackagerError.runtimeBinaryNotFound(built.path)
-        }
-        return built.standardized
+        return try resolveBuiltRuntimeBinary(in: runtimeProjectDir)
     }
 
     private func runCommand(executable: String, arguments: [String], directory: URL) throws {
@@ -176,6 +183,39 @@ struct BuildCommand: ParsableCommand {
         guard process.terminationStatus == 0 else {
             throw PackagerError.runtimeBuildFailed
         }
+    }
+
+    private func resolveBuiltRuntimeBinary(in runtimeProjectDir: URL) throws -> URL {
+        let fm = FileManager.default
+        let candidates: [URL] = [
+            runtimeProjectDir.appendingPathComponent(".build/debug/BeaconRuntime"),
+            runtimeProjectDir.appendingPathComponent(".build/release/BeaconRuntime"),
+            runtimeProjectDir.appendingPathComponent(".build/arm64-apple-macosx/debug/BeaconRuntime"),
+            runtimeProjectDir.appendingPathComponent(".build/x86_64-apple-macosx/debug/BeaconRuntime"),
+            runtimeProjectDir.appendingPathComponent(".build/arm64-apple-macosx/release/BeaconRuntime"),
+            runtimeProjectDir.appendingPathComponent(".build/x86_64-apple-macosx/release/BeaconRuntime")
+        ]
+
+        if let found = candidates.first(where: { fm.fileExists(atPath: $0.path) }) {
+            return found.standardizedFileURL
+        }
+
+        if let enumerator = fm.enumerator(
+            at: runtimeProjectDir.appendingPathComponent(".build"),
+            includingPropertiesForKeys: [.isRegularFileKey],
+            options: [.skipsHiddenFiles]
+        ) {
+            for case let fileURL as URL in enumerator {
+                guard fileURL.lastPathComponent == "BeaconRuntime" else { continue }
+                let path = fileURL.path
+                if path.contains(".dSYM") { continue }
+                return fileURL.standardizedFileURL
+            }
+        }
+
+        throw PackagerError.runtimeBinaryNotFound(
+            runtimeProjectDir.appendingPathComponent(".build/debug/BeaconRuntime").path
+        )
     }
 
     private func resolveUserPath(_ path: String, relativeTo base: URL) -> URL {

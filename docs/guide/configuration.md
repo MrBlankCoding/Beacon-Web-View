@@ -1,8 +1,8 @@
 # Configuration
 
-Beacon apps are configured using a `runtime.config.json` file in the root of your project.
+Beacon is configured with a `runtime.config.json` file at your app root.
 
-## Example Configuration
+## Full Example
 
 ```json
 {
@@ -18,43 +18,55 @@ Beacon apps are configured using a `runtime.config.json` file in the root of you
     }
   },
   "permissions": {
-    "filesystem": true,
+    "filesystem": ["$DOCUMENTS", "$DESKTOP"],
     "notifications": true,
-    "shell": true
+    "shell": false
   },
-  "entry": "dist/index.html"
+  "entry": "build/index.html"
 }
 ```
 
-## Options
+## Top-Level Fields
 
-### `window`
+### `window` (required)
 
-Configure the appearance and behavior of the application window.
+Native window configuration.
 
-- `width`: Initial window width (number).
-- `height`: Initial window height (number).
-- `resizable`: Whether the window is resizable (boolean, default: `true`).
-- `title`: The title displayed in the title bar (string).
-- `frame`: Whether to show the standard macOS window frame (boolean, default: `true`).
-- `vibrancy`: Enable macOS vibrancy effects.
-  - `enabled`: Whether vibrancy is enabled (boolean).
-  - `material`: The vibrancy material (e.g., `"sidebar"`, `"menu"`, `"popover"`, `"content"`, `"window"`).
+- `width` (`number`, required)
+- `height` (`number`, required)
+- `resizable` (`boolean`, default `true`)
+- `title` (`string`, optional)
+- `frame` (`boolean`, default `true`)
+- `vibrancy` (`object`, optional)
+  - `enabled` (`boolean`)
+  - `material` (`string`, for example `sidebar`, `menu`, `popover`, `content`, `window`)
 
-### `permissions`
+### `permissions` (optional)
 
-Gated APIs require explicit permissions to be enabled in this section.
+Permission gates for sensitive APIs.
 
-- `filesystem`: Enable `window.beacon.fs`. Can be:
-  - `boolean`: `true` for full access, `false` to disable.
-  - `array of strings`: List of allowed directory paths (scoped access).
-    - Supports special tokens: `$HOME`, `$DOCUMENTS`, `$DESKTOP`, `$DOWNLOADS`, `$APP_DATA`.
-    - Example: `["$DOCUMENTS", "$APP_DATA/my-app"]`
-- `notifications`: Enable `window.beacon.notifications` (boolean, default: `false`).
-- `shell`: Enable `window.beacon.shell` (boolean, default: `false`).
+- `filesystem` (`boolean | string[]`, default `false`)
+  - `true`: full access
+  - `false`: disabled
+  - `string[]`: scoped access paths
+- `notifications` (`boolean`, default `false`)
+- `shell` (`boolean`, default `false`)
 
-### `entry`
+Supported path tokens for `filesystem` scopes:
 
-The relative path to your web app's main HTML file (string).
-For production, this should point to your built `index.html`.
-In development, Beacon will typically point to your dev server's URL instead.
+- `$HOME`
+- `$DOCUMENTS`
+- `$DESKTOP`
+- `$DOWNLOADS`
+- `$APP_DATA`
+
+### `entry` (required)
+
+Relative path to your app HTML entry file (for example `build/index.html`).
+
+## API-to-Permission Map
+
+- `window.beacon.fs` -> `permissions.filesystem`
+- `window.beacon.notifications` -> `permissions.notifications`
+- `window.beacon.shell` -> `permissions.shell`
+- all other `window.beacon.*` namespaces are currently not permission-gated
