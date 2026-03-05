@@ -1,6 +1,12 @@
-# Tray API (`window.beacon.tray`)
+# Tray API (`tray`)
 
 Create and manage a macOS status bar (menu bar) item.
+
+## Usage
+
+```typescript
+import { tray } from '@beacon-web-view/api';
+```
 
 ## Permissions
 
@@ -8,8 +14,8 @@ No permission required.
 
 ## Methods
 
-### `setIcon(image?: string): Promise<string>`
-Sets tray icon and resolves with `"ok"`.
+### `setIcon(image?: string): Promise<void>`
+Sets tray icon.
 
 `image` can be:
 
@@ -17,8 +23,8 @@ Sets tray icon and resolves with `"ok"`.
 - image path
 - omitted/null to fall back to text title
 
-### `setMenu(items: TrayMenuItem[]): Promise<string>`
-Sets tray menu and resolves with `"ok"`.
+### `setMenu(items: TrayMenuItem[]): Promise<void>`
+Sets tray menu.
 
 `TrayMenuItem` fields:
 
@@ -27,27 +33,25 @@ Sets tray menu and resolves with `"ok"`.
 - `key?: string`
 - `isSeparator?: boolean`
 
-### `destroy(): Promise<string>`
-Removes the tray item and resolves with `"ok"`.
+### `destroy(): Promise<void>`
+Removes the tray item.
 
-## Events
-
-When a tray item is clicked, Beacon emits:
-
-- DOM event `beacon-tray-click` (`event.detail` is the item id)
-- callback `window.onBeaconTrayClick(id)`
+### `onClick(listener: (itemId: string) => void): () => void`
+Register a listener for tray item clicks. Returns an unregister function.
 
 ## Example
 
-```js
-window.onBeaconTrayClick = (id) => {
+```typescript
+import { tray } from '@beacon-web-view/api';
+
+const unregister = tray.onClick((id) => {
   if (id === "quit") {
     console.log("quit clicked");
   }
-};
+});
 
-await window.beacon.tray.setIcon("gearshape.fill");
-await window.beacon.tray.setMenu([
+await tray.setIcon("gearshape.fill");
+await tray.setMenu([
   { id: "show", title: "Show App", key: "s" },
   { isSeparator: true },
   { id: "quit", title: "Quit", key: "q" }

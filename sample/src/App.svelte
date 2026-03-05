@@ -10,6 +10,7 @@
   import Storage from "./tabs/Storage.svelte";
   import Console from "./tabs/Console.svelte";
   import { log, logError } from "./consoleStore";
+  import { app as beaconApp } from "@beacon-web-view/api";
 
   let activeTab = "dashboard";
   let runtimeVersion = "Checking...";
@@ -17,17 +18,10 @@
   let isCheckingRuntime = true;
 
   onMount(async () => {
-    // Small delay to ensure bridge.js has executed (it's injected at document start)
-    await new Promise(r => setTimeout(r, 100));
-    
     try {
-      if (window.beacon && window.beacon.app) {
-        runtimeVersion = await window.beacon.app.getVersion();
-        isRuntimeDetected = true;
-        log("Beacon runtime initialized");
-      } else {
-        throw new Error("Bridge not found");
-      }
+      runtimeVersion = await beaconApp.getVersion();
+      isRuntimeDetected = true;
+      log("Beacon runtime initialized");
     } catch (err) {
       isRuntimeDetected = false;
       logError("Beacon runtime not detected. Native APIs will be unavailable.");

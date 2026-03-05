@@ -1,4 +1,5 @@
 import Foundation
+import AppKit
 
 /// Central API dispatcher with permission gating
 class APIManager {
@@ -12,6 +13,7 @@ class APIManager {
     private let shortcutsAPI: ShortcutsAPI
     private let systemAPI: SystemAPI
     private let menuAPI: MenuAPI
+    private let windowAPI: WindowAPI
     private let cachedConfigJSON: String
     private let openWindowHandler: (() -> Void)?
 
@@ -44,6 +46,7 @@ class APIManager {
         self.menuAPI = MenuAPI(onMenuItemClick: { id in
             onEvent("beacon-menu-click", id)
         })
+        self.windowAPI = WindowAPI()
         self.openWindowHandler = openWindowHandler
         
         let filesystemConfig: Any
@@ -68,7 +71,7 @@ class APIManager {
         }
     }
 
-    func handle(command: String, args: [String: Any], completion: @escaping (APIResult) -> Void) {
+    func handle(command: String, args: [String: Any], window: NSWindow? = nil, completion: @escaping (APIResult) -> Void) {
         let parts = command.split(separator: ".", maxSplits: 1)
         guard parts.count == 2 else {
             completion(.error("Invalid command format: \(command)"))
@@ -117,6 +120,9 @@ class APIManager {
 
         case "clipboard":
             clipboardAPI.handle(method: method, args: args, completion: completion)
+
+        case "window":
+            windowAPI.handle(method: method, args: args, window: window, completion: completion)
 
         case "app":
             handleAppCommand(method: method, args: args, completion: completion)

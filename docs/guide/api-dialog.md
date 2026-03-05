@@ -1,6 +1,12 @@
-# Dialog API (`window.beacon.dialog`)
+# Dialog API (`dialog`)
 
 Open native macOS file and save dialogs.
+
+## Usage
+
+```typescript
+import { dialog } from '@beacon-web-view/api';
+```
 
 ## Permissions
 
@@ -10,7 +16,7 @@ Selected paths are bookmarked internally so scoped filesystem access can persist
 
 ## Methods
 
-### `showOpenDialog(options): Promise<string | string[]>`
+### `showOpenDialog(options): Promise<string[]>`
 Shows an `NSOpenPanel`.
 
 `options`:
@@ -21,10 +27,7 @@ Shows an `NSOpenPanel`.
 - `message` (string)
 - `buttonLabel` (string)
 
-Returns:
-
-- single-select: selected path string
-- multi-select: array of selected path strings
+Returns an array of selected path strings.
 
 ### `showSaveDialog(options): Promise<string>`
 Shows an `NSSavePanel`.
@@ -39,14 +42,16 @@ Returns selected save path.
 
 ## Example
 
-```js
-const folder = await window.beacon.dialog.showOpenDialog({
+```typescript
+import { dialog } from '@beacon-web-view/api';
+
+const paths = await dialog.showOpenDialog({
   canChooseDirectories: true,
   canChooseFiles: false,
   message: "Select export folder"
 });
 
-const outputPath = await window.beacon.dialog.showSaveDialog({
+const outputPath = await dialog.showSaveDialog({
   defaultName: "report.txt",
   buttonLabel: "Save"
 });

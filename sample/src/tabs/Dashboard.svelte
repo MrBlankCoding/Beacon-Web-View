@@ -1,5 +1,6 @@
 <script>
   import { onMount } from "svelte";
+  import { system } from "@beacon-web-view/api";
   import { logError } from "../consoleStore";
 
   let diskUsage = 0;
@@ -8,18 +9,10 @@
   let uptime = "Checking...";
   let model = "Detecting...";
   let osVersion = "...";
-  let systemApiAvailable = true;
 
   async function refreshStats() {
-    if (!window.beacon?.system?.getStats) {
-      if (systemApiAvailable) {
-        logError("System API unavailable: window.beacon.system.getStats is missing");
-        systemApiAvailable = false;
-      }
-      return;
-    }
     try {
-      const stats = await window.beacon.system.getStats();
+      const stats = await system.getStats();
       cpuLoad = Math.round(stats.cpu);
       memoryUsage = Math.round(stats.memory);
       diskUsage = Math.round(stats.disk);
@@ -29,15 +22,8 @@
   }
 
   async function loadMachineInfo() {
-    if (!window.beacon?.system?.getMachineInfo) {
-      if (systemApiAvailable) {
-        logError("System API unavailable: window.beacon.system.getMachineInfo is missing");
-        systemApiAvailable = false;
-      }
-      return;
-    }
     try {
-      const info = await window.beacon.system.getMachineInfo();
+      const info = await system.getMachineInfo();
       model = info.model;
       osVersion = info.osVersion;
       uptime = info.uptime;
@@ -47,12 +33,6 @@
   }
 
   onMount(() => {
-    if (!window.beacon?.system?.getStats || !window.beacon?.system?.getMachineInfo) {
-      loadMachineInfo();
-      refreshStats();
-      return;
-    }
-
     loadMachineInfo();
     refreshStats();
     const statsInterval = setInterval(refreshStats, 3000);

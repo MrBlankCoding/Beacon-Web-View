@@ -1,4 +1,5 @@
 <script>
+  import { fs, dialog } from "@beacon-web-view/api";
   import { log, logError } from "../consoleStore";
 
   let desktopFiles = [];
@@ -7,7 +8,7 @@
   async function loadFiles() {
     isLoadingFiles = true;
     try {
-      desktopFiles = await window.beacon.fs.listDirectory("~/Desktop");
+      desktopFiles = await fs.listDirectory("~/Desktop");
       log(`Found ${desktopFiles.length} items on Desktop`);
     } catch (err) {
       logError(`Scan failed: ${err.message}`);
@@ -18,13 +19,13 @@
 
   async function requestAccess() {
     try {
-      const path = await window.beacon.dialog.showOpenDialog({
+      const path = await dialog.showOpenDialog({
         canChooseDirectories: true,
         canChooseFiles: false,
         message: "Choose a folder to scan with Beacon"
       });
       log(`Granted access to: ${path}`);
-      desktopFiles = await window.beacon.fs.listDirectory(path);
+      desktopFiles = await fs.listDirectory(path[0]); // Dialog returns array
     } catch (err) {
       logError(`Access request failed: ${err.message}`);
     }

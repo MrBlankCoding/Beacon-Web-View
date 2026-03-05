@@ -1,6 +1,12 @@
-# Menu API (`window.beacon.menu`)
+# Menu API (`menu`)
 
 Show native context menus at the current mouse location.
+
+## Usage
+
+```typescript
+import { menu } from '@beacon-web-view/api';
+```
 
 ## Permissions
 
@@ -8,8 +14,8 @@ No permission required.
 
 ## Methods
 
-### `showContextMenu(items: MenuItem[]): Promise<string>`
-Shows a popup menu and resolves with `"ok"`.
+### `showContextMenu(items: MenuItem[]): Promise<void>`
+Shows a popup menu.
 
 `MenuItem` fields:
 
@@ -19,23 +25,21 @@ Shows a popup menu and resolves with `"ok"`.
 - `isSeparator?: boolean`
 - `submenu?: MenuItem[]`
 
-## Events
-
-When a user clicks an item with `id`, Beacon emits:
-
-- DOM event `beacon-menu-click` (`event.detail` is the id)
-- callback `window.onBeaconMenuClick(id)`
+### `onClick(listener: (itemId: string) => void): () => void`
+Register a listener for menu item clicks. Returns an unregister function.
 
 ## Example
 
-```js
-window.onBeaconMenuClick = (id) => {
+```typescript
+import { menu } from '@beacon-web-view/api';
+
+const unregister = menu.onClick((id) => {
   if (id === "copy") {
     console.log("copy clicked");
   }
-};
+});
 
-await window.beacon.menu.showContextMenu([
+await menu.showContextMenu([
   { id: "copy", label: "Copy" },
   { id: "paste", label: "Paste", enabled: false },
   { isSeparator: true },

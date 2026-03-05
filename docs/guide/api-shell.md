@@ -1,6 +1,12 @@
-# Shell API (`window.beacon.shell`)
+# Shell API (`shell`)
 
 Execute shell commands through `/bin/zsh -lc`.
+
+## Usage
+
+```typescript
+import { shell } from '@beacon-web-view/api';
+```
 
 ## Permissions
 
@@ -18,7 +24,9 @@ Behavior:
 
 ## Example
 
-```js
-const output = await window.beacon.shell.exec("df -h /");
+```typescript
+import { shell } from '@beacon-web-view/api';
+
+const output = await shell.exec("df -h /");
 console.log(output);
 ```

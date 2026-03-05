@@ -1,11 +1,12 @@
 <script>
+  import { notifications } from "@beacon-web-view/api";
   import { log, logError } from "../consoleStore";
 
   let notif = { title: "System Alert", body: "A message from Beacon" };
 
   async function sendNotif() {
     try {
-      await window.beacon.notifications.send(notif.title, notif.body);
+      await notifications.send(notif.title, notif.body);
       log(`Notification sent: ${notif.title}`);
     } catch (err) {
       logError(`Notification failed: ${err.message}`);

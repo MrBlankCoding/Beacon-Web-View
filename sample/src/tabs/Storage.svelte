@@ -1,5 +1,6 @@
 <script>
   import { onMount } from "svelte";
+  import { system } from "@beacon-web-view/api";
   import { logError } from "../consoleStore";
 
   let storage = {
@@ -12,12 +13,8 @@
   let isLoading = true;
 
   async function refreshStorage() {
-    if (!window.beacon?.system?.getStorageInfo) {
-      logError("System API unavailable: getStorageInfo is missing");
-      return;
-    }
     try {
-      storage = await window.beacon.system.getStorageInfo();
+      storage = await system.getStorageInfo();
     } catch (err) {
       logError(`Storage info failed: ${err.message}`);
     } finally {

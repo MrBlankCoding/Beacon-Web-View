@@ -1,4 +1,5 @@
 <script>
+  import { shell } from "@beacon-web-view/api";
   import { log, logError } from "../consoleStore";
 
   let shellCommand = "sysctl -n machdep.cpu.brand_string";
@@ -9,7 +10,7 @@
     if (!shellCommand.trim()) return;
     isRunningCommand = true;
     try {
-      shellOutput = await window.beacon.shell.exec(shellCommand);
+      shellOutput = await shell.exec(shellCommand);
       log(`Shell command: ${shellCommand}`);
     } catch (err) {
       shellOutput = `Error: ${err.message}`;

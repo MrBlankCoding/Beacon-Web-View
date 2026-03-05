@@ -1,6 +1,12 @@
-# Filesystem API (`window.beacon.fs`)
+# Filesystem API (`fs`)
 
 Permission-gated filesystem access.
+
+## Usage
+
+```typescript
+import { fs } from '@beacon-web-view/api';
+```
 
 ## Permissions
 
@@ -9,16 +15,10 @@ Requires `permissions.filesystem` in `runtime.config.json`.
 ```json
 {
   "permissions": {
-    "filesystem": ["$DOCUMENTS", "$DESKTOP"]
+    "filesystem": true
   }
 }
 ```
-
-Supported values:
-
-- `false`: disabled
-- `true`: full filesystem access
-- `string[]`: scoped directories
 
 Path tokens supported in scoped values and method inputs:
 
@@ -34,8 +34,8 @@ Path tokens supported in scoped values and method inputs:
 ### `readFile(path: string): Promise<string>`
 Reads a UTF-8 file.
 
-### `writeFile(path: string, content: string): Promise<string>`
-Writes UTF-8 content, creating parent directories as needed. Resolves with `"ok"`.
+### `writeFile(path: string, content: string): Promise<void>`
+Writes UTF-8 content, creating parent directories as needed.
 
 ### `listDirectory(path: string): Promise<string[]>`
 Returns sorted file/folder names in the directory.
@@ -48,12 +48,14 @@ Returns `true` when the path exists and is a directory.
 
 ## Example
 
-```js
-const entries = await window.beacon.fs.listDirectory("$DESKTOP");
+```typescript
+import { fs } from '@beacon-web-view/api';
+
+const entries = await fs.listDirectory("$DESKTOP");
 
 const reportPath = "$DOCUMENTS/beacon/report.txt";
-await window.beacon.fs.writeFile(reportPath, "Beacon report\n");
+await fs.writeFile(reportPath, "Beacon report\n");
 
-const content = await window.beacon.fs.readFile(reportPath);
+const content = await fs.readFile(reportPath);
 console.log(entries, content);
 ```

@@ -1,6 +1,12 @@
-# Shortcuts API (`window.beacon.shortcuts`)
+# Shortcuts API (`shortcuts`)
 
 Register global/local keyboard shortcuts and receive events when they fire.
+
+## Usage
+
+```typescript
+import { shortcuts } from '@beacon-web-view/api';
+```
 
 ## Permissions
 
@@ -8,8 +14,8 @@ No permission required.
 
 ## Methods
 
-### `register(shortcut: string): Promise<string>`
-Registers a shortcut and resolves with `"ok"`.
+### `register(shortcut: string): Promise<void>`
+Registers a shortcut.
 
 Format:
 
@@ -17,22 +23,20 @@ Format:
 - modifiers: `command` (`cmd`), `shift`, `control` (`ctrl`), `option` (`alt`)
 - example: `command+shift+b`
 
-### `unregisterAll(): Promise<string>`
-Removes all registered shortcuts and resolves with `"ok"`.
+### `unregisterAll(): Promise<void>`
+Removes all registered shortcuts.
 
-## Events
-
-When a registered shortcut is pressed, Beacon emits:
-
-- DOM event `beacon-shortcut` (`event.detail` is normalized combo string)
-- callback `window.onBeaconShortcut(combo)`
+### `onTrigger(listener: (combo: string) => void): () => void`
+Register a listener for shortcut triggers. Returns an unregister function.
 
 ## Example
 
-```js
-window.onBeaconShortcut = (combo) => {
-  console.log("shortcut:", combo);
-};
+```typescript
+import { shortcuts } from '@beacon-web-view/api';
 
-await window.beacon.shortcuts.register("command+shift+b");
+const unregister = shortcuts.onTrigger((combo) => {
+  console.log("shortcut:", combo);
+});
+
+await shortcuts.register("command+shift+b");
 ```

@@ -167,6 +167,6 @@ class WebViewManager: NSObject, WKNavigationDelegate {
     }
 
     static func isValidBridgeScript(_ script: String) -> Bool {
-        return script.contains("window.beacon") && script.contains("__beacon_nativeCallback")
+        return script.contains("__beacon_nativeCallback")
     }
 }

@@ -1,4 +1,5 @@
 <script>
+  import { clipboard } from "@beacon-web-view/api";
   import { log, logError } from "../consoleStore";
 
   let clipboardText = "";
@@ -6,7 +7,7 @@
   async function copyToClipboard() {
     try {
       if (!clipboardText) return;
-      await window.beacon.clipboard.writeText(clipboardText);
+      await clipboard.writeText(clipboardText);
       log("Copied to macOS clipboard");
     } catch (err) {
       logError(`Copy failed: ${err.message}`);
@@ -15,7 +16,7 @@
 
   async function pasteFromClipboard() {
     try {
-      clipboardText = await window.beacon.clipboard.readText();
+      clipboardText = await clipboard.readText();
       log("Pasted from macOS clipboard");
     } catch (err) {
       logError(`Paste failed: ${err.message}`);

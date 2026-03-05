@@ -38,7 +38,7 @@ class BridgeHandler: NSObject, WKScriptMessageHandler {
                 return
             }
 
-            self.apiManager.handle(command: command, args: args) { [weak self] result in
+            self.apiManager.handle(command: command, args: args, window: self.webView?.window) { [weak self] (result: APIResult) in
                 DispatchQueue.main.async {
                     self?.enqueueResponse(callId: callId, result: result)
                     limiter.signal()

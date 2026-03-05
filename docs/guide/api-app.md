@@ -1,6 +1,12 @@
-# App API (`window.beacon.app`)
+# App API (`app`)
 
 Application metadata and window lifecycle helpers.
+
+## Usage
+
+```typescript
+import { app } from '@beacon-web-view/api';
+```
 
 ## Permissions
 
@@ -14,15 +20,17 @@ Returns the runtime version string.
 ### `getConfig(): Promise<object>`
 Returns the loaded runtime config object.
 
-### `openWindow(): Promise<string>`
-Opens a new native window and resolves with `"ok"`.
+### `openWindow(url?: string): Promise<void>`
+Opens a new native window.
 
 ## Example
 
-```js
-const version = await window.beacon.app.getVersion();
-const config = await window.beacon.app.getConfig();
+```typescript
+import { app } from '@beacon-web-view/api';
+
+const version = await app.getVersion();
+const config = await app.getConfig();
 
 console.log(version, config.entry);
-await window.beacon.app.openWindow();
+await app.openWindow();
 ```

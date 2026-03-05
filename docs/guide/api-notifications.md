@@ -1,6 +1,12 @@
-# Notifications API (`window.beacon.notifications`)
+# Notifications API (`notifications`)
 
 Send native macOS user notifications.
+
+## Usage
+
+```typescript
+import { notifications } from '@beacon-web-view/api';
+```
 
 ## Permissions
 
@@ -10,15 +16,17 @@ Notifications only work when Beacon is running from a packaged `.app` bundle.
 
 ## Methods
 
-### `send(title: string, body?: string): Promise<string>`
-Sends a notification and resolves with `"ok"`.
+### `send(title: string, body?: string): Promise<void>`
+Sends a notification.
 
 If the OS permission is denied, the Promise rejects with a user-facing error.
 
 ## Example
 
-```js
-await window.beacon.notifications.send(
+```typescript
+import { notifications } from '@beacon-web-view/api';
+
+await notifications.send(
   "Build complete",
   "Your export finished successfully."
 );

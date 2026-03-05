@@ -1,5 +1,6 @@
 <script>
   import { onMount } from "svelte";
+  import { tray, shell } from "@beacon-web-view/api";
   import { log, logError } from "../consoleStore";
 
   let trayItems = [
@@ -12,23 +13,15 @@
   async function handleTrayClick(id) {
     log(`Tray clicked: ${id}`);
     if (id === "quit") {
-      if (!window.beacon?.shell?.exec) {
-        logError("Shell API unavailable: cannot quit from tray action");
-        return;
-      }
-      await window.beacon.shell.exec("killall Beacon");
+      await shell.exec("killall Beacon");
     }
   }
 
   async function setupTray() {
-    if (!window.beacon?.tray?.setIcon || !window.beacon?.tray?.setMenu) {
-      logError("Tray API unavailable: window.beacon.tray methods are missing");
-      return;
-    }
     try {
-      await window.beacon.tray.setIcon("gearshape.fill");
-      await window.beacon.tray.setMenu(trayItems);
-      window.onBeaconTrayClick = handleTrayClick;
+      await tray.setIcon("gearshape.fill");
+      await tray.setMenu(trayItems);
+      tray.onClick(handleTrayClick);
       log("Tray configured");
     } catch (err) {
       logError(`Tray setup failed: ${err.message}`);

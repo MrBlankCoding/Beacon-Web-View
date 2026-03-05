@@ -1,10 +1,31 @@
 # API Overview
 
-Beacon injects a `window.beacon` object into your renderer with native macOS APIs.
+Beacon provides a bridge to native macOS APIs. You can interact with these APIs using the **official TypeScript SDK** (recommended) or the injected `window.beacon` object.
 
-## Availability
+## Official SDK (Recommended)
 
-All namespaces below are available by default, but some methods are permission-gated by `runtime.config.json`.
+For the best developer experience, including full **TypeScript types** and **auto-completion**, use the `@beacon-web-view/api` package.
+
+### Installation
+
+```bash
+npm install @beacon-web-view/api
+```
+
+### Usage
+
+```typescript
+import { app, notifications } from '@beacon-web-view/api';
+
+async function init() {
+  const version = await app.getVersion();
+  await notifications.send("Beacon", `Running version ${version}`);
+}
+```
+
+## Low-level Bridge (`window.beacon`)
+
+If you are not using a bundler, Beacon injects a `window.beacon` object into your renderer.
 
 | Namespace | Object | Permission Required |
 | --- | --- | --- |
@@ -19,23 +40,28 @@ All namespaces below are available by default, but some methods are permission-g
 | System | `window.beacon.system` | No |
 | Tray | `window.beacon.tray` | No |
 
-## Event Hooks
+## Events
 
-Beacon dispatches DOM events and also mirrors them to convenience callbacks:
+The SDK provides a clean, listener-based event system.
+
+```typescript
+import { tray, shortcuts } from '@beacon-web-view/api';
+
+// Listen for tray clicks
+tray.onClick((id) => {
+  console.log(`Tray item clicked: ${id}`);
+});
+
+// Listen for global shortcuts
+shortcuts.onTrigger((combo) => {
+  console.log(`Global shortcut triggered: ${combo}`);
+});
+```
+
+### Low-level DOM Events
+
+Beacon also dispatches standard DOM events:
 
 - `beacon-tray-click` with `event.detail` = menu item id (string)
 - `beacon-shortcut` with `event.detail` = normalized shortcut string
 - `beacon-menu-click` with `event.detail` = menu item id (string)
-
-Convenience callback aliases:
-
-- `window.onBeaconTrayClick = (id) => { ... }`
-- `window.onBeaconShortcut = (combo) => { ... }`
-- `window.onBeaconMenuClick = (id) => { ... }`
-
-## Basic Example
-
-```js
-const version = await window.beacon.app.getVersion();
-await window.beacon.notifications.send("Beacon", `Running ${version}`);
-```

@@ -1,0 +1,21 @@
+{
+  "name": "@beacon-web-view/api",
+  "version": "1.0.0",
+  "description": "The JavaScript/TypeScript SDK for the Beacon runtime.",
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup src/index.ts --format cjs,esm --dts --minify && npm run build:bridge",
+    "build:bridge": "tsup src/index.ts --format iife --global-name beacon --minify --out-dir dist --entry.bridge=src/index.ts && mv dist/bridge.global.js dist/bridge.js",
+    "dev": "tsup src/index.ts --format cjs,esm --watch --dts",
+    "lint": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "tsup": "^8.0.2",
+    "typescript": "^5.4.5"
+  }
+}

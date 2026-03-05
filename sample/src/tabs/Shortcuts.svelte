@@ -1,20 +1,17 @@
 <script>
   import { onMount } from "svelte";
+  import { shortcuts } from "@beacon-web-view/api";
   import { log, logError } from "../consoleStore";
 
   let lastShortcut = "None";
 
   async function setupShortcuts() {
-    if (!window.beacon?.shortcuts?.register) {
-      logError("Shortcuts API unavailable: window.beacon.shortcuts.register is missing");
-      return;
-    }
     try {
-      await window.beacon.shortcuts.register("command+shift+b");
-      window.onBeaconShortcut = (combo) => {
+      await shortcuts.register("command+shift+b");
+      shortcuts.onTrigger((combo) => {
         lastShortcut = combo;
         log(`Shortcut triggered: ${combo}`);
-      };
+      });
       log("Shortcut registered: command+shift+b");
     } catch (err) {
       logError(`Shortcuts setup failed: ${err.message}`);
