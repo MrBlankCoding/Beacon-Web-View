@@ -77,7 +77,7 @@ type Listener = (data: any) => void;
 const listeners = new Map<string, Set<Listener>>();
 
 if (typeof window !== 'undefined') {
-  const eventTypes = ['beacon-tray-click', 'beacon-shortcut', 'beacon-menu-click'];
+  const eventTypes = ['beacon-tray-click', 'beacon-shortcut', 'beacon-menu-click', 'beacon-theme-change'];
   eventTypes.forEach(type => {
     window.addEventListener(type, (e: any) => {
       const typeListeners = listeners.get(type);
@@ -85,6 +85,58 @@ if (typeof window !== 'undefined') {
         typeListeners.forEach(l => l(e.detail));
       }
     });
+  });
+
+  // Console Hijacking for Native Debugging
+  const originalConsole = {
+    log: console.log,
+    warn: console.warn,
+    error: console.error,
+    debug: console.debug,
+  };
+
+  const forwardLog = (level: string, args: any[]) => {
+    const message = args.map(arg => {
+      if (typeof arg === 'object') {
+        try { return JSON.stringify(arg); } catch { return String(arg); }
+      }
+      return String(arg);
+    }).join(' ');
+    
+    callNative('debug.log', { level, message });
+  };
+
+  console.log = (...args) => {
+    originalConsole.log(...args);
+    forwardLog('info', args);
+  };
+  console.warn = (...args) => {
+    originalConsole.warn(...args);
+    forwardLog('warn', args);
+  };
+  console.error = (...args) => {
+    originalConsole.error(...args);
+    forwardLog('error', args);
+  };
+  console.debug = (...args) => {
+    originalConsole.debug(...args);
+    forwardLog('debug', args);
+  };
+
+  // Window Draggable Regions Support
+  window.addEventListener('mousedown', (e) => {
+    let target = e.target as HTMLElement | null;
+    while (target && target !== document.documentElement) {
+      if (target.style && ((target.style as any).webkitAppRegion === 'drag' || target.hasAttribute('data-beacon-drag'))) {
+        // Prevent drag on inputs/buttons/interactive elements
+        const tagName = target.tagName.toLowerCase();
+        if (tagName !== 'button' && tagName !== 'input' && tagName !== 'select' && tagName !== 'textarea') {
+          callNative('window.startDragging');
+        }
+        break;
+      }
+      target = target.parentElement;
+    }
   });
 }
 
@@ -153,24 +205,26 @@ export const shortcuts = {
   onTrigger: (listener: (shortcut: string) => void) => on('beacon-shortcut', listener),
 };
 
+export const browserWindow = {
+  minimize: () => callNative<void>('window.minimize'),
+  maximize: () => callNative<void>('window.maximize'),
+  close: () => callNative<void>('window.close'),
+  focus: () => callNative<void>('window.focus'),
+  setFullscreen: (fullscreen: boolean) => callNative<void>('window.setFullscreen', { fullscreen }),
+  isMaximized: () => callNative<boolean>('window.isMaximized'),
+  isMinimized: () => callNative<boolean>('window.isMinimized'),
+  isFullscreen: () => callNative<boolean>('window.isFullscreen'),
+};
+
+export const theme = {
+  getTheme: () => callNative<'light' | 'dark'>('theme.getTheme'),
+  setTheme: (theme: 'light' | 'dark' | 'system') => callNative<void>('theme.setTheme', { theme }),
+  onThemeChange: (listener: (theme: 'light' | 'dark') => void) => on('beacon-theme-change', listener),
+};
+
 export const app = {
   getVersion: () => callNative<string>('app.getVersion'),
   getConfig: () => callNative<any>('app.getConfig'),
   openWindow: (url?: string) => callNative<void>('app.openWindow', { url }),
+  setBadge: (label: string | null) => callNative<void>('app.setBadge', { label }),
 };
-
-// Expose to window.beacon for runtime detection and global access
-if (typeof window !== 'undefined') {
-  (window as any).beacon = {
-    fs,
-    dialog,
-    clipboard,
-    notifications,
-    shell,
-    menu,
-    system,
-    tray,
-    shortcuts,
-    app
-  };
-}

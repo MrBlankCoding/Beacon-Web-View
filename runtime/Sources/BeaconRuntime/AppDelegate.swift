@@ -4,7 +4,13 @@ import UserNotifications
 class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCenterDelegate {
     private var mainProcess: MainProcessCoordinator?
 
+    func applicationWillFinishLaunching(_ notification: Notification) {
+        NSApp.setActivationPolicy(.regular)
+    }
+
     func applicationDidFinishLaunching(_ notification: Notification) {
+        NSApp.activate(ignoringOtherApps: true)
+
         if RuntimeEnvironment.isRunningFromAppBundle() {
             UNUserNotificationCenter.current().delegate = self
         } else {

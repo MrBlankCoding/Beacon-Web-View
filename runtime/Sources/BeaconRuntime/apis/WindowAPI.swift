@@ -36,11 +36,18 @@ class WindowAPI {
                     completion(.error("setFullscreen requires boolean argument"))
                 }
             case "isMaximized":
-                completion(.success(String(window.isZoomed)))
+                completion(.successJSON(window.isZoomed ? "true" : "false"))
             case "isMinimized":
-                completion(.success(String(window.isMiniaturized)))
+                completion(.successJSON(window.isMiniaturized ? "true" : "false"))
             case "isFullscreen":
-                completion(.success(String(window.styleMask.contains(.fullScreen))))
+                completion(.successJSON(window.styleMask.contains(.fullScreen) ? "true" : "false"))
+            case "startDragging":
+                if let event = NSApp.currentEvent {
+                    window.performDrag(with: event)
+                    completion(.success("ok"))
+                } else {
+                    completion(.error("No current mouse event available for dragging"))
+                }
             default:
                 completion(.error("Unknown window method: \(method)"))
             }

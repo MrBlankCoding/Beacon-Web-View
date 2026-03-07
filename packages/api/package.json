@@ -10,7 +10,7 @@
   ],
   "scripts": {
     "build": "tsup src/index.ts --format cjs,esm --dts --minify && npm run build:bridge",
-    "build:bridge": "tsup src/index.ts --format iife --global-name beacon --minify --out-dir dist --entry.bridge=src/index.ts && mv dist/bridge.global.js dist/bridge.js",
+    "build:bridge": "tsup src/index.ts --format iife --global-name __beacon_bridge --minify --out-dir dist --entry.bridge=src/index.ts && mv dist/bridge.global.js dist/bridge.js",
     "dev": "tsup src/index.ts --format cjs,esm --watch --dts",
     "lint": "tsc --noEmit"
   },

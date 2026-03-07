@@ -1,8 +1,8 @@
 # API Overview
 
-Beacon provides a bridge to native macOS APIs. You can interact with these APIs using the **official TypeScript SDK** (recommended) or the injected `window.beacon` object.
+Beacon provides a bridge to native macOS APIs. You can interact with these APIs using the **official TypeScript SDK**.
 
-## Official SDK (Recommended)
+## Official SDK
 
 For the best developer experience, including full **TypeScript types** and **auto-completion**, use the `@beacon-web-view/api` package.
 
@@ -23,29 +23,29 @@ async function init() {
 }
 ```
 
-## Low-level Bridge (`window.beacon`)
-
-If you are not using a bundler, Beacon injects a `window.beacon` object into your renderer.
+## Available Namespaces
 
 | Namespace | Object | Permission Required |
 | --- | --- | --- |
-| App | `window.beacon.app` | No |
-| Clipboard | `window.beacon.clipboard` | No |
-| Dialog | `window.beacon.dialog` | No |
-| Filesystem | `window.beacon.fs` | `permissions.filesystem` |
-| Menu | `window.beacon.menu` | No |
-| Notifications | `window.beacon.notifications` | `permissions.notifications` |
-| Shell | `window.beacon.shell` | `permissions.shell` |
-| Shortcuts | `window.beacon.shortcuts` | No |
-| System | `window.beacon.system` | No |
-| Tray | `window.beacon.tray` | No |
+| App | `app` | No |
+| Clipboard | `clipboard` | No |
+| Dialog | `dialog` | No |
+| Filesystem | `fs` | `permissions.filesystem` |
+| Menu | `menu` | No |
+| Notifications | `notifications` | `permissions.notifications` |
+| Shell | `shell` | `permissions.shell` |
+| Shortcuts | `shortcuts` | No |
+| System | `system` | No |
+| Theme | `theme` | No |
+| Tray | `tray` | No |
+| Window | `browserWindow` | No |
 
 ## Events
 
 The SDK provides a clean, listener-based event system.
 
 ```typescript
-import { tray, shortcuts } from '@beacon-web-view/api';
+import { tray, shortcuts, theme } from '@beacon-web-view/api';
 
 // Listen for tray clicks
 tray.onClick((id) => {
@@ -56,12 +56,9 @@ tray.onClick((id) => {
 shortcuts.onTrigger((combo) => {
   console.log(`Global shortcut triggered: ${combo}`);
 });
+
+// Listen for theme changes
+theme.onThemeChange((newTheme) => {
+  console.log(`Theme is now ${newTheme}`);
+});
 ```
-
-### Low-level DOM Events
-
-Beacon also dispatches standard DOM events:
-
-- `beacon-tray-click` with `event.detail` = menu item id (string)
-- `beacon-shortcut` with `event.detail` = normalized shortcut string
-- `beacon-menu-click` with `event.detail` = menu item id (string)

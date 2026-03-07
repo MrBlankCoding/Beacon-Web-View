@@ -104,11 +104,16 @@ class BridgeHandler: NSObject, WKScriptMessageHandler {
 
     func emitEvent(name: String, detail: Any) {
         let detailJSON: String
-        if let data = try? JSONSerialization.data(withJSONObject: detail),
+        if JSONSerialization.isValidJSONObject(detail),
+           let data = try? JSONSerialization.data(withJSONObject: detail),
            let json = String(data: data, encoding: .utf8) {
             detailJSON = json
         } else if let s = detail as? String {
             detailJSON = quoteJS(s)
+        } else if let b = detail as? Bool {
+            detailJSON = b ? "true" : "false"
+        } else if let n = detail as? NSNumber {
+            detailJSON = n.stringValue
         } else {
             detailJSON = "null"
         }

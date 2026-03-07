@@ -19,7 +19,9 @@ final class MainProcessCoordinator {
             trayManager: trayManager,
             shortcutsManager: shortcutsManager,
             onEvent: { [weak self] name, detail in
-                self?.broadcastEvent(name: name, detail: detail)
+                DispatchQueue.main.async {
+                    self?.broadcastEvent(name: name, detail: detail)
+                }
             },
             openWindowHandler: { [weak self] in
                 DispatchQueue.main.async {

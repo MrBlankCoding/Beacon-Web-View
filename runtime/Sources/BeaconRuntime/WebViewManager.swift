@@ -33,6 +33,8 @@ class WebViewManager: NSObject, WKNavigationDelegate {
     init(config: RuntimeConfig, apiManager: APIManager) {
         self.config = config
         let webConfig = WKWebViewConfiguration()
+        webConfig.preferences.setValue(true, forKey: "allowFileAccessFromFileURLs")
+        webConfig.setValue(true, forKey: "allowUniversalAccessFromFileURLs")
 
         #if DEBUG
         webConfig.preferences.setValue(true, forKey: "developerExtrasEnabled")

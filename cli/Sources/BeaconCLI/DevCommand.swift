@@ -64,15 +64,61 @@ struct DevCommand: ParsableCommand {
                 "BEACON_DEV_SERVER_URL": devServerURL.absoluteString
             ]
         )
-        process.standardOutput = FileHandle.standardOutput
-        process.standardError = FileHandle.standardError
+        
+        let outputPipe = Pipe()
+        process.standardOutput = outputPipe
+        process.standardError = outputPipe // Capture stderr too
         process.standardInput = FileHandle.standardInput
+        
+        outputPipe.fileHandleForReading.readabilityHandler = { handle in
+            let data = handle.availableData
+            guard !data.isEmpty else { return }
+            if let output = String(data: data, encoding: .utf8) {
+                let lines = output.components(separatedBy: .newlines)
+                for line in lines where !line.isEmpty {
+                    if line.hasPrefix("🔗BEACON_LOG🔗") {
+                        let jsonStr = line.replacingOccurrences(of: "🔗BEACON_LOG🔗", with: "")
+                        formatAndPrintLog(jsonStr)
+                    } else {
+                        // Regular output
+                        print("  \(line)")
+                    }
+                }
+            }
+        }
+
         try process.run()
         process.waitUntilExit()
 
         guard process.terminationStatus == 0 else {
             throw ExitCode(process.terminationStatus)
         }
+    }
+
+    private func formatAndPrintLog(_ json: String) {
+        struct LogMessage: Codable {
+            let level: String
+            let source: String
+            let message: String
+        }
+
+        guard let data = json.data(using: .utf8),
+              let log = try? JSONDecoder().decode(LogMessage.self, from: data) else {
+            return
+        }
+
+        let levelColor: String
+        switch log.level.lowercased() {
+        case "error": levelColor = "\u{001B}[31m" // Red
+        case "warn":  levelColor = "\u{001B}[33m" // Yellow
+        case "debug": levelColor = "\u{001B}[36m" // Cyan
+        default:      levelColor = "\u{001B}[32m" // Green
+        }
+
+        let reset = "\u{001B}[0m"
+        let sourceColor = "\u{001B}[90m" // Gray
+
+        print("\(levelColor)[\(log.level.uppercased())]\(reset) \(sourceColor)\(log.source):\(reset) \(log.message)")
     }
 
     private func mergedEnvironment(_ vars: [String: String]) -> [String: String] {

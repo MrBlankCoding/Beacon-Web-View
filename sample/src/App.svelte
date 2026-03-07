@@ -9,19 +9,34 @@
   import Shortcuts from "./tabs/Shortcuts.svelte";
   import Storage from "./tabs/Storage.svelte";
   import Console from "./tabs/Console.svelte";
+  import Playground from "./tabs/Playground.svelte";
+  import WindowTab from "./tabs/Window.svelte";
   import { log, logError } from "./consoleStore";
-  import { app as beaconApp } from "@beacon-web-view/api";
+  import { app as beaconApp, theme } from "@beacon-web-view/api";
 
   let activeTab = "dashboard";
   let runtimeVersion = "Checking...";
   let isRuntimeDetected = false;
   let isCheckingRuntime = true;
+  let currentTheme = "dark";
+
+  async function updateTheme() {
+    currentTheme = await theme.getTheme();
+    document.documentElement.setAttribute("data-theme", currentTheme);
+  }
 
   onMount(async () => {
     try {
       runtimeVersion = await beaconApp.getVersion();
       isRuntimeDetected = true;
       log("Beacon runtime initialized");
+      
+      await updateTheme();
+      theme.onThemeChange((newTheme) => {
+        log(`System theme changed to: ${newTheme}`);
+        currentTheme = newTheme;
+        document.documentElement.setAttribute("data-theme", newTheme);
+      });
     } catch (err) {
       isRuntimeDetected = false;
       logError("Beacon runtime not detected. Native APIs will be unavailable.");
@@ -31,10 +46,13 @@
   });
 </script>
 
-<div class="app">
+<div class="app" class:dark={currentTheme === 'dark'} class:light={currentTheme === 'light'}>
   <header>
     <h1>Beacon System Manager</h1>
-    <span class="runtime-info">v{runtimeVersion}</span>
+    <div style="display: flex; align-items: center; gap: 1rem;">
+      <span class="theme-badge">{currentTheme.toUpperCase()} MODE</span>
+      <span class="runtime-info">v{runtimeVersion}</span>
+    </div>
   </header>
 
   <main class="main-content">
@@ -42,6 +60,8 @@
       <nav>
         <ul>
           <li class:active={activeTab === 'dashboard'} on:click={() => activeTab = 'dashboard'}>Dashboard</li>
+          <li class:active={activeTab === 'playground'} on:click={() => activeTab = 'playground'}>Playground</li>
+          <li class:active={activeTab === 'window'} on:click={() => activeTab = 'window'}>Window</li>
           <li class:active={activeTab === 'explorer'} on:click={() => activeTab = 'explorer'}>Filesystem</li>
           <li class:active={activeTab === 'terminal'} on:click={() => activeTab = 'terminal'}>Terminal</li>
           <li class:active={activeTab === 'notifications'} on:click={() => activeTab = 'notifications'}>Notifications</li>
@@ -67,6 +87,10 @@
       {:else}
         {#if activeTab === 'dashboard'}
           <Dashboard {runtimeVersion} />
+        {:else if activeTab === 'playground'}
+          <Playground />
+        {:else if activeTab === 'window'}
+          <WindowTab />
         {:else if activeTab === 'explorer'}
           <Explorer />
         {:else if activeTab === 'terminal'}

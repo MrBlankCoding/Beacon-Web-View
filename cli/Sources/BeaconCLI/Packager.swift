@@ -52,7 +52,7 @@ class Packager {
         try fm.createDirectory(at: macOSURL, withIntermediateDirectories: true)
         try fm.createDirectory(at: webURL, withIntermediateDirectories: true)
 
-        let executableURL = macOSURL.appendingPathComponent("BeaconRuntime")
+        let executableURL = macOSURL.appendingPathComponent(appName)
         try copyItemIfNeeded(from: runtimeBinaryURL, to: executableURL)
         try fm.setAttributes(
             [.posixPermissions: 0o755],
@@ -97,7 +97,7 @@ class Packager {
         let plistContent = PlistGenerator.generate(
             appName: appName,
             bundleId: bundleId,
-            executableName: "BeaconRuntime",
+            executableName: appName,
             notificationsEnabled: config.permissions.notifications
         )
         let plistURL = contentsURL.appendingPathComponent("Info.plist")

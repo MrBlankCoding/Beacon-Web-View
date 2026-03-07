@@ -1,4 +1,6 @@
 <script>
+  import { onMount } from "svelte";
+  import { clipboard, menu } from "@beacon-web-view/api";
   import { logs, log } from "../consoleStore";
 
   function getLogColor(type) {
@@ -12,7 +14,7 @@
   async function copyLogs() {
     try {
       const text = $logs.map(l => `[${l.timestamp}] ${l.type.toUpperCase()}: ${l.message}`).join("\n");
-      await window.beacon.clipboard.writeText(text);
+      await clipboard.writeText(text);
       log("Logs copied to macOS clipboard");
     } catch (err) {
       console.error(err);
@@ -22,7 +24,7 @@
   async function copySelectedText() {
     const selection = window.getSelection().toString();
     if (selection) {
-      await window.beacon.clipboard.writeText(selection);
+      await clipboard.writeText(selection);
       log("Selected text copied");
     }
   }
@@ -30,22 +32,24 @@
   async function handleContextMenu(e) {
     e.preventDefault();
     
-    // Set global callback for this menu session
-    window.onBeaconMenuClick = (id) => {
-      if (id === 'copy-selection') copySelectedText();
-      if (id === 'copy-all') copyLogs();
-      if (id === 'clear') $logs = [];
-    };
-
     const hasSelection = window.getSelection().toString().length > 0;
 
-    await window.beacon.menu.showContextMenu([
+    await menu.showContextMenu([
       { id: 'copy-selection', label: 'Copy Selection', enabled: hasSelection },
       { isSeparator: true },
       { id: 'copy-all', label: 'Copy All Logs' },
       { id: 'clear', label: 'Clear Console' }
     ]);
   }
+
+  onMount(() => {
+    const unlisten = menu.onClick((id) => {
+      if (id === 'copy-selection') copySelectedText();
+      if (id === 'copy-all') copyLogs();
+      if (id === 'clear') $logs = [];
+    });
+    return unlisten;
+  });
 </script>
 
 <div class="card">

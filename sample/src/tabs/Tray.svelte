@@ -1,10 +1,10 @@
 <script>
   import { onMount } from "svelte";
-  import { tray, shell } from "@beacon-web-view/api";
+  import { tray, shell, browserWindow } from "@beacon-web-view/api";
   import { log, logError } from "../consoleStore";
 
   let trayItems = [
-    { id: "show", title: "Show App", key: "s" },
+    { id: "focus", title: "Focus App", key: "f" },
     { id: "refresh", title: "Refresh Stats", key: "r" },
     { isSeparator: true },
     { id: "quit", title: "Quit Beacon", key: "q" }
@@ -13,16 +13,22 @@
   async function handleTrayClick(id) {
     log(`Tray clicked: ${id}`);
     if (id === "quit") {
-      await shell.exec("killall Beacon");
+      await shell.exec("killall BeaconRuntime");
+    } else if (id === "focus") {
+      await browserWindow.focus();
     }
   }
 
+  let unlisten = null;
+
   async function setupTray() {
     try {
-      await tray.setIcon("gearshape.fill");
+      if (unlisten) unlisten();
+      
+      await tray.setIcon("gearshape.fill"); // Could implement api suuport for a custom icon
       await tray.setMenu(trayItems);
-      tray.onClick(handleTrayClick);
-      log("Tray configured");
+      unlisten = tray.onClick(handleTrayClick);
+      log("Tray configured and listener attached");
     } catch (err) {
       logError(`Tray setup failed: ${err.message}`);
     }
@@ -30,6 +36,7 @@
 
   onMount(() => {
     setupTray();
+    return () => { if (unlisten) unlisten(); };
   });
 </script>
 

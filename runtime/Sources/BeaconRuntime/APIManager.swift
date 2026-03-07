@@ -14,6 +14,7 @@ class APIManager {
     private let systemAPI: SystemAPI
     private let menuAPI: MenuAPI
     private let windowAPI: WindowAPI
+    private let themeAPI: ThemeAPI
     private let cachedConfigJSON: String
     private let openWindowHandler: (() -> Void)?
 
@@ -47,6 +48,9 @@ class APIManager {
             onEvent("beacon-menu-click", id)
         })
         self.windowAPI = WindowAPI()
+        self.themeAPI = ThemeAPI(onThemeChange: { theme in
+            onEvent("beacon-theme-change", theme)
+        })
         self.openWindowHandler = openWindowHandler
         
         let filesystemConfig: Any
@@ -74,61 +78,85 @@ class APIManager {
     func handle(command: String, args: [String: Any], window: NSWindow? = nil, completion: @escaping (APIResult) -> Void) {
         let parts = command.split(separator: ".", maxSplits: 1)
         guard parts.count == 2 else {
-            completion(.error("Invalid command format: \(command)"))
+            let errorMsg = "Invalid command format: \(command)"
+            Logger.error("bridge", errorMsg)
+            completion(.error(errorMsg))
             return
         }
 
         let namespace = String(parts[0])
         let method = String(parts[1])
+        
+        if namespace != "debug" {
+            Logger.debug("bridge", "API Call: \(command)")
+        }
+
+        let wrappedCompletion: (APIResult) -> Void = { result in
+            if case .error(let msg) = result {
+                Logger.error("bridge", "API Error (\(command)): \(msg)")
+            }
+            completion(result)
+        }
 
         switch namespace {
         case "fs":
             guard permissions.filesystem.isEnabled else {
-                completion(.error("Permission denied: filesystem access is not enabled in runtime.config.json"))
+                wrappedCompletion(.error("Permission denied: filesystem access is not enabled in runtime.config.json"))
                 return
             }
-            fileSystemAPI.handle(method: method, args: args, completion: completion)
+            fileSystemAPI.handle(method: method, args: args, completion: wrappedCompletion)
 
         case "notifications":
             guard permissions.notifications else {
-                completion(.error("Permission denied: notifications access is not enabled in runtime.config.json"))
+                wrappedCompletion(.error("Permission denied: notifications access is not enabled in runtime.config.json"))
                 return
             }
-            notificationAPI.handle(method: method, args: args, completion: completion)
+            notificationAPI.handle(method: method, args: args, completion: wrappedCompletion)
 
         case "shell":
             guard permissions.shell else {
-                completion(.error("Permission denied: shell access is not enabled in runtime.config.json"))
+                wrappedCompletion(.error("Permission denied: shell access is not enabled in runtime.config.json"))
                 return
             }
-            shellAPI.handle(method: method, args: args, completion: completion)
+            shellAPI.handle(method: method, args: args, completion: wrappedCompletion)
 
         case "dialog":
-            dialogAPI.handle(method: method, args: args, completion: completion)
+            dialogAPI.handle(method: method, args: args, completion: wrappedCompletion)
 
         case "tray":
-            trayAPI.handle(method: method, args: args, completion: completion)
+            trayAPI.handle(method: method, args: args, completion: wrappedCompletion)
 
         case "shortcuts":
-            shortcutsAPI.handle(method: method, args: args, completion: completion)
+            shortcutsAPI.handle(method: method, args: args, completion: wrappedCompletion)
 
         case "system":
-            systemAPI.handle(method: method, args: args, completion: completion)
+            systemAPI.handle(method: method, args: args, completion: wrappedCompletion)
 
         case "menu":
-            menuAPI.handle(method: method, args: args, completion: completion)
+            menuAPI.handle(method: method, args: args, completion: wrappedCompletion)
 
         case "clipboard":
-            clipboardAPI.handle(method: method, args: args, completion: completion)
+            clipboardAPI.handle(method: method, args: args, completion: wrappedCompletion)
 
         case "window":
-            windowAPI.handle(method: method, args: args, window: window, completion: completion)
+            windowAPI.handle(method: method, args: args, window: window, completion: wrappedCompletion)
+
+        case "theme":
+            themeAPI.handle(method: method, args: args, completion: wrappedCompletion)
+
+        case "debug":
+            if method == "log", let message = args["message"] as? String {
+                let levelStr = args["level"] as? String ?? "info"
+                let level = LogLevel(rawValue: levelStr) ?? .info
+                Logger.log(level, source: "renderer", message)
+                completion(.success("ok"))
+            }
 
         case "app":
-            handleAppCommand(method: method, args: args, completion: completion)
+            handleAppCommand(method: method, args: args, completion: wrappedCompletion)
 
         default:
-            completion(.error("Unknown API namespace: \(namespace)"))
+            wrappedCompletion(.error("Unknown API namespace: \(namespace)"))
         }
     }
 
@@ -146,7 +174,15 @@ class APIManager {
                 return
             }
             opener()
-            completion(.success("ok"))
+            completion(.successJSON("true"))
+
+        case "setBadge":
+            let label = args["label"] as? String
+            DispatchQueue.main.async {
+                NSApp.dockTile.badgeLabel = label
+                NSApp.dockTile.display()
+                completion(.successJSON("true"))
+            }
 
         default:
             completion(.error("Unknown app method: \(method)"))
