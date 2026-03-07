@@ -15,7 +15,7 @@ enum BridgeScriptError: LocalizedError, Equatable {
 }
 
 /// Manages the isolated renderer host (WKWebView) and preload bridge wiring.
-class WebViewManager: NSObject, WKNavigationDelegate {
+class WebViewManager: NSObject, WKNavigationDelegate, WKUIDelegate {
     let webView: WKWebView
     var onInitialLoadComplete: (() -> Void)? {
         didSet {
@@ -61,8 +61,27 @@ class WebViewManager: NSObject, WKNavigationDelegate {
 
         super.init()
         self.webView.navigationDelegate = self
+        self.webView.uiDelegate = self
         self.bridgeHandler.webView = self.webView
         loadEntryFile()
+    }
+
+    func webView(_ webView: WKWebView, requestMediaCapturePermissionFor origin: WKSecurityOrigin, initiatedByFrame frame: WKFrameInfo, type: WKMediaCaptureType, decisionHandler: @escaping (WKPermissionDecision) -> Void) {
+        switch type {
+        case .microphone:
+            decisionHandler(config.permissions.microphone ? .grant : .deny)
+        case .camera:
+            decisionHandler(config.permissions.camera ? .grant : .deny)
+        case .cameraAndMicrophone:
+            decisionHandler((config.permissions.camera && config.permissions.microphone) ? .grant : .deny)
+        default:
+            // WKMediaCaptureType.display is 3 in macOS 15.0+
+            if type.rawValue == 3 {
+                decisionHandler(config.permissions.screen ? .grant : .deny)
+            } else {
+                decisionHandler(.deny)
+            }
+        }
     }
 
     deinit {

@@ -98,7 +98,10 @@ class Packager {
             appName: appName,
             bundleId: bundleId,
             executableName: appName,
-            notificationsEnabled: config.permissions.notifications
+            notificationsEnabled: config.permissions.notifications,
+            microphoneEnabled: config.permissions.microphone,
+            cameraEnabled: config.permissions.camera,
+            screenEnabled: config.permissions.screen
         )
         let plistURL = contentsURL.appendingPathComponent("Info.plist")
         try plistContent.write(to: plistURL, atomically: true, encoding: .utf8)

@@ -23,6 +23,9 @@ struct RuntimeConfig: Codable {
         let filesystem: FilesystemPermission
         let notifications: Bool
         let shell: Bool
+        let microphone: Bool
+        let camera: Bool
+        let screen: Bool
 
         enum FilesystemPermission: Codable {
             case disabled
@@ -60,6 +63,9 @@ struct RuntimeConfig: Codable {
             self.filesystem = try container.decodeIfPresent(FilesystemPermission.self, forKey: .filesystem) ?? .disabled
             self.notifications = try container.decodeIfPresent(Bool.self, forKey: .notifications) ?? false
             self.shell = try container.decodeIfPresent(Bool.self, forKey: .shell) ?? false
+            self.microphone = try container.decodeIfPresent(Bool.self, forKey: .microphone) ?? false
+            self.camera = try container.decodeIfPresent(Bool.self, forKey: .camera) ?? false
+            self.screen = try container.decodeIfPresent(Bool.self, forKey: .screen) ?? false
         }
     }
 

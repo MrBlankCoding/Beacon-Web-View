@@ -6,11 +6,29 @@ enum PlistGenerator {
         appName: String,
         bundleId: String,
         executableName: String,
-        notificationsEnabled: Bool = false
+        notificationsEnabled: Bool = false,
+        microphoneEnabled: Bool = false,
+        cameraEnabled: Bool = false,
+        screenEnabled: Bool = false
     ) -> String {
         let notificationKeys = notificationsEnabled ? """
             <key>NSUserNotificationAlertStyle</key>
             <string>alert</string>
+        """ : ""
+        
+        let microphoneKeys = microphoneEnabled ? """
+            <key>NSMicrophoneUsageDescription</key>
+            <string>\(appName) needs microphone access for audio calls.</string>
+        """ : ""
+
+        let cameraKeys = cameraEnabled ? """
+            <key>NSCameraUsageDescription</key>
+            <string>\(appName) needs camera access for video calls.</string>
+        """ : ""
+
+        let screenKeys = screenEnabled ? """
+            <key>NSDisplayCaptureUsageDescription</key>
+            <string>\(appName) needs screen recording access to share your screen.</string>
         """ : ""
         return """
         <?xml version="1.0" encoding="UTF-8"?>
@@ -46,6 +64,9 @@ enum PlistGenerator {
             <key>NSSupportsSuddenTermination</key>
             <true/>
         \(notificationKeys)
+        \(microphoneKeys)
+        \(cameraKeys)
+        \(screenKeys)
         </dict>
         </plist>
         """

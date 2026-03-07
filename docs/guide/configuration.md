@@ -51,6 +51,9 @@ Permission gates for sensitive APIs.
   - `string[]`: scoped access paths
 - `notifications` (`boolean`, default `false`)
 - `shell` (`boolean`, default `false`)
+- `microphone` (`boolean`, default `false`): Required for `getUserMedia` audio.
+- `camera` (`boolean`, default `false`): Required for `getUserMedia` video.
+- `screen` (`boolean`, default `false`): Required for `getDisplayMedia` screen sharing.
 
 Supported path tokens for `filesystem` scopes:
 
@@ -69,4 +72,5 @@ Relative path to your app HTML entry file (for example `build/index.html`).
 - `window.beacon.fs` -> `permissions.filesystem`
 - `window.beacon.notifications` -> `permissions.notifications`
 - `window.beacon.shell` -> `permissions.shell`
-- all other `window.beacon.*` namespaces are currently not permission-gated
+- `navigator.mediaDevices.getUserMedia` -> `permissions.microphone` / `permissions.camera`
+- `navigator.mediaDevices.getDisplayMedia` -> `permissions.screen`

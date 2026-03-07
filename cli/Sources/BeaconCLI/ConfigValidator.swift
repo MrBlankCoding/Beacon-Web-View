@@ -18,6 +18,9 @@ enum ConfigValidator {
             let filesystem: Bool
             let notifications: Bool
             let shell: Bool
+            let microphone: Bool
+            let camera: Bool
+            let screen: Bool
         }
     }
 
@@ -64,7 +67,10 @@ enum ConfigValidator {
         let permissions = ValidatedConfig.PermissionsConfig(
             filesystem: permissionsJSON["filesystem"] as? Bool ?? false,
             notifications: permissionsJSON["notifications"] as? Bool ?? false,
-            shell: permissionsJSON["shell"] as? Bool ?? false
+            shell: permissionsJSON["shell"] as? Bool ?? false,
+            microphone: permissionsJSON["microphone"] as? Bool ?? false,
+            camera: permissionsJSON["camera"] as? Bool ?? false,
+            screen: permissionsJSON["screen"] as? Bool ?? false
         )
 
         return ValidatedConfig(
